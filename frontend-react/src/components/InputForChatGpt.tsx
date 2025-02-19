@@ -1,9 +1,9 @@
 import React, { forwardRef } from 'react'
 
-function InputForChatGpt(ref) {
+function InputForChatGpt() {
   return (
     <>
-       <input ref={ref}  type='text' 
+       <input   type='text' 
        placeholder='Message Me'
        className='text-chatgpt-secondary-dark bg-transparent  outline-none ' />
     </>
