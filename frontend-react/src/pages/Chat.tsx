@@ -81,7 +81,11 @@ function Chat() {
             if (list.length && !currentId) setCurrentId((prev) => prev || list[0].id)
           })
         })
-        .catch(() => null)
+        .catch(() => {
+          const data = loadConversations(userId)
+          setConversations(data)
+          if (data.length && !currentId) setCurrentId(data[0].id)
+        })
       return () => {
         if (unsub) unsub()
       }
