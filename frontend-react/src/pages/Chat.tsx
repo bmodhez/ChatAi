@@ -201,6 +201,13 @@ function Chat() {
       console.error(err)
     } finally {
       setLoading(false)
+      if (isFirestoreEnabled() && conv) {
+        const final = conversations.find((c) => c.id === conv!.id)
+        if (final) {
+          await ensureAuth(user?.name)
+          await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
+        }
+      }
       inputRef.current?.focus()
     }
   }
