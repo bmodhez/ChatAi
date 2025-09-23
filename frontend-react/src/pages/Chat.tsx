@@ -366,7 +366,3 @@ function Chat() {
 }
 
 export default Chat
-
-// Auto scroll effect
-// Keep at end to avoid re-renders ordering issues
-// Scroll when messages added/updated or conversation changes
