@@ -40,20 +40,32 @@ function apiPlugin() {
             const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
             const model = genAI.getGenerativeModel({ model: modelName })
 
-            const history = messages
-              .filter((m: any) => m.role !== 'system')
-              .slice(0, -1)
-              .map((m: any) => ({
+            const imageBase64 = typeof body?.imageBase64 === 'string' ? body.imageBase64 : undefined
+            const imageMimeType = typeof body?.imageMimeType === 'string' ? body.imageMimeType : undefined
+
+            const contents: any[] = []
+            // System prompt as initial user instruction
+            contents.push({ role: 'user', parts: [{ text: system }] })
+
+            for (const m of messages) {
+              if (m.role === 'system') continue
+              contents.push({
                 role: m.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: String(m.content ?? '') }],
-              }))
-            const lastUser = messages.length ? String(messages[messages.length - 1].content ?? '') : ''
-            const chat = model.startChat({ history })
+              })
+            }
 
-            const streamResult = await chat.sendMessageStream([
-              { text: system },
-              { text: lastUser },
-            ])
+            // If image provided with the last user message, append as inlineData part
+            if (imageBase64 && imageMimeType) {
+              const last = contents[contents.length - 1]
+              if (last && last.role === 'user') {
+                last.parts.push({ inlineData: { data: imageBase64, mimeType: imageMimeType } })
+              } else {
+                contents.push({ role: 'user', parts: [{ inlineData: { data: imageBase64, mimeType: imageMimeType } }] })
+              }
+            }
+
+            const streamResult = await model.generateContentStream({ contents })
 
             for await (const chunk of streamResult.stream) {
               const text = chunk.text()
