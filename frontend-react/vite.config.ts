@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import type { ViteDevServer } from 'vite'
 import OpenAI from 'openai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 function apiPlugin() {
   return {
@@ -26,39 +27,68 @@ function apiPlugin() {
               ? body.system
               : 'You are a production-grade AI assistant for chat. Help users ask questions, create content, learn new skills, and get real-time, accurate, and safe solutions. Be concise, friendly, and actionable.'
 
-          const apiKey = process.env.OPENAI_API_KEY
-          if (!apiKey) {
-            res.statusCode = 500
-            res.end('Missing OPENAI_API_KEY')
-            return
-          }
-
-          const openai = new OpenAI({ apiKey })
+          const useGemini = !!process.env.GEMINI_API_KEY
+          const useOpenAI = !!process.env.OPENAI_API_KEY
 
           res.setHeader('Content-Type', 'text/plain; charset=utf-8')
           res.setHeader('Transfer-Encoding', 'chunked')
           res.setHeader('Cache-Control', 'no-cache')
           res.setHeader('Connection', 'keep-alive')
 
-          const stream = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-            stream: true,
-            messages: [
-              { role: 'system', content: system },
-              ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-            ],
-            temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
-          })
+          if (useGemini) {
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string)
+            const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+            const model = genAI.getGenerativeModel({ model: modelName })
 
-          for await (const part of stream) {
-            const delta = part.choices?.[0]?.delta?.content || ''
-            if (delta) res.write(delta)
+            const history = messages
+              .filter((m: any) => m.role !== 'system')
+              .slice(0, -1)
+              .map((m: any) => ({
+                role: m.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: String(m.content ?? '') }],
+              }))
+            const lastUser = messages.length ? String(messages[messages.length - 1].content ?? '') : ''
+            const chat = model.startChat({ history })
+
+            const streamResult = await chat.sendMessageStream([
+              { text: system },
+              { text: lastUser },
+            ])
+
+            for await (const chunk of streamResult.stream) {
+              const text = chunk.text()
+              if (text) res.write(text)
+            }
+            res.end()
+            return
           }
-          res.end()
-        } catch (err: any) {
+
+          if (useOpenAI) {
+            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+            const stream = await openai.chat.completions.create({
+              model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+              stream: true,
+              messages: [
+                { role: 'system', content: system },
+                ...messages.map((m: any) => ({ role: m.role, content: m.content })),
+              ],
+              temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
+            })
+
+            for await (const part of stream) {
+              const delta = part.choices?.[0]?.delta?.content || ''
+              if (delta) res.write(delta)
+            }
+            res.end()
+            return
+          }
+
+          res.statusCode = 500
+          res.end('Missing API key (set GEMINI_API_KEY or OPENAI_API_KEY)')
+        } catch (err) {
           res.statusCode = 500
           res.end('Server error')
-          console.error('[API /api/chat] Error:', err?.message || err)
+          console.error('[API /api/chat] Error:', err)
         }
       })
     },
