@@ -71,6 +71,11 @@ function Chat() {
   const controllerRef = useRef<AbortController | null>(null)
   const abortedRef = useRef(false)
 
+  const msgCount = current?.messages.length || 0
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [scrollVersion, currentId, msgCount])
+
   useEffect(() => {
     const u = loadUser()
     setUser(u)
