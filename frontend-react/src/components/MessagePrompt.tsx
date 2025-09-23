@@ -3,7 +3,7 @@ import InputForChatGpt from './InputForChatGpt'
 
 type Props = {
   value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
   onSend: () => void
   onFileSelected?: (file: File) => void
   disabled?: boolean
