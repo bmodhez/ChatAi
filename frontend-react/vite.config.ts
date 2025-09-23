@@ -76,7 +76,10 @@ function apiPlugin() {
           }
 
           if (useOpenAI) {
-            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+            const openai = new OpenAI({
+              apiKey: process.env.OPENAI_API_KEY as string,
+              baseURL: (process.env as any).OPENAI_BASE_URL || undefined,
+            })
             const stream = await openai.chat.completions.create({
               model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
               stream: true,
