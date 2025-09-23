@@ -165,10 +165,18 @@ function Chat() {
         userMsg,
       ]
 
+      let imageBase64: string | undefined
+      let imageMimeType: string | undefined
+      if (selectedImage) {
+        imageMimeType = selectedImage.mimeType
+        const base64 = selectedImage.dataUrl.split(',')[1]
+        imageBase64 = base64
+      }
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: payloadMessages }),
+        body: JSON.stringify({ messages: payloadMessages, imageBase64, imageMimeType }),
       })
 
       if (!res.ok || !res.body) throw new Error('Failed to connect to AI service')
