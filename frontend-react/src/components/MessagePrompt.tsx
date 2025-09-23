@@ -5,10 +5,11 @@ type Props = {
   value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   onSend: () => void
+  onFileSelected?: (file: File) => void
   disabled?: boolean
 }
 
-function MessagePrompt({ value, onChange, onSend, disabled }: Props) {
+function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled }: Props) {
   return (
     <>
       <div className='px-2 py-3 rounded-2xl mx-2 sm:mx-20 my-3 bg-chatgpt-dark md:mx-36 lg:mx-72'>
