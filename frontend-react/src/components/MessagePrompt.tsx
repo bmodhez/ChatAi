@@ -26,6 +26,18 @@ function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled }: Pr
               }}
             />
           </div>
+          <label className='rounded-full p-[6px] bg-white cursor-pointer hover:opacity-90'>
+            <input
+              type='file'
+              accept='image/*'
+              className='hidden'
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f && onFileSelected) onFileSelected(f)
+              }}
+            />
+            📎
+          </label>
           <button
             type='button'
             aria-label='Send message'
