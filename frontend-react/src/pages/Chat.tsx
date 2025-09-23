@@ -68,6 +68,8 @@ function Chat() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const [scrollVersion, setScrollVersion] = useState(0)
+  const controllerRef = useRef<AbortController | null>(null)
+  const abortedRef = useRef(false)
 
   useEffect(() => {
     const u = loadUser()
@@ -137,6 +139,7 @@ function Chat() {
     const text = input.trim()
     if (!text || loading) return
     setInput('')
+    abortedRef.current = false
 
     let attachmentUrl: string | null = null
     if (selectedFile && isFirestoreEnabled()) {
@@ -144,6 +147,10 @@ function Chat() {
         await ensureAuth(user?.name)
         attachmentUrl = await uploadChatFile(selectedFile)
       } catch {}
+    }
+    // Fallback to local preview data URL when Firestore is disabled or upload fails
+    if (!attachmentUrl && selectedImage) {
+      attachmentUrl = selectedImage.dataUrl
     }
 
     let conv = current
@@ -174,6 +181,10 @@ function Chat() {
       setConversations((prev) => prev.map((c) => (c.id === conv!.id ? updated : c)))
     }
 
+    // Clear attached preview immediately after the message is queued
+    setSelectedImage(null)
+    setSelectedFile(null)
+
     setLoading(true)
 
     try {
@@ -191,13 +202,21 @@ function Chat() {
         imageBase64 = base64
       }
 
+      const controller = new AbortController()
+      controllerRef.current = controller
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: payloadMessages, imageBase64, imageMimeType }),
+        signal: controller.signal,
       })
 
-      if (!res.ok || !res.body) throw new Error('Failed to connect to AI service')
+      let errorText = ''
+      if (!res.ok) {
+        try { errorText = await res.text() } catch {}
+      }
+      if (!res.ok || !res.body) throw new Error(errorText || 'Failed to connect to AI service')
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -226,15 +245,21 @@ function Chat() {
         }
       }
     } catch (err) {
-      const idNow = currentId
-      if (idNow) {
-        setConversations((prev) =>
-          prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: 'Sorry, I ran into an error. Please try again.' }], updatedAt: Date.now() } : c))
-        )
+      if (!abortedRef.current) {
+        const idNow = currentId
+        const raw = err instanceof Error ? err.message : String(err)
+        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
+        if (idNow) {
+          setConversations((prev) =>
+            prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
+          )
+        }
+        console.error(err)
       }
-      console.error(err)
     } finally {
       setLoading(false)
+      controllerRef.current = null
+      abortedRef.current = false
       if (isFirestoreEnabled() && conv) {
         const final = conversations.find((c) => c.id === conv!.id)
         if (final) {
@@ -245,6 +270,14 @@ function Chat() {
       setSelectedImage(null)
       setSelectedFile(null)
       inputRef.current?.focus()
+    }
+  }
+
+  const handleStop = () => {
+    if (controllerRef.current) {
+      abortedRef.current = true
+      controllerRef.current.abort()
+      setLoading(false)
     }
   }
 
@@ -349,6 +382,8 @@ function Chat() {
             onChange={(e) => setInput(e.target.value)}
             onSend={handleSend}
             disabled={loading}
+            onStop={handleStop}
+            showStop={loading}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()

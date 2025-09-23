@@ -7,9 +7,11 @@ type Props = {
   onSend: () => void
   onFileSelected?: (file: File) => void
   disabled?: boolean
+  onStop?: () => void
+  showStop?: boolean
 }
 
-function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled }: Props) {
+function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onStop, showStop }: Props) {
   return (
     <>
       <div className='px-2 py-3 rounded-2xl mx-2 sm:mx-20 my-3 bg-chatgpt-dark md:mx-36 lg:mx-72'>
@@ -38,6 +40,16 @@ function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled }: Pr
             />
             📎
           </label>
+          {showStop && (
+            <button
+              type='button'
+              aria-label='Stop generation'
+              onClick={onStop}
+              className='rounded-full p-[6px] bg-white'
+            >
+              ⏹
+            </button>
+          )}
           <button
             type='button'
             aria-label='Send message'
