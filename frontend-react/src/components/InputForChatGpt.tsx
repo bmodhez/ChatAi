@@ -1,13 +1,26 @@
 import React, { forwardRef } from 'react'
 
-function InputForChatGpt() {
-  return (
-    <>
-       <input   type='text' 
-       placeholder='Message Me'
-       className='text-chatgpt-secondary-dark bg-transparent  outline-none ' />
-    </>
-  )
+type Props = {
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  placeholder?: string
 }
 
-export default forwardRef(InputForChatGpt)
+const InputForChatGpt = forwardRef<HTMLInputElement, Props>(
+  ({ value, onChange, onKeyDown, placeholder = 'Message Me' }, ref) => {
+    return (
+      <input
+        ref={ref}
+        type='text'
+        placeholder={placeholder}
+        className='text-chatgpt-secondary-dark bg-transparent outline-none w-full'
+        value={value}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+      />
+    )
+  }
+)
+
+export default InputForChatGpt
