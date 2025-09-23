@@ -145,6 +145,10 @@ function Chat() {
         attachmentUrl = await uploadChatFile(selectedFile)
       } catch {}
     }
+    // Fallback to local preview data URL when Firestore is disabled or upload fails
+    if (!attachmentUrl && selectedImage) {
+      attachmentUrl = selectedImage.dataUrl
+    }
 
     let conv = current
     const userMsg: ChatMessage = {
@@ -173,6 +177,10 @@ function Chat() {
       }
       setConversations((prev) => prev.map((c) => (c.id === conv!.id ? updated : c)))
     }
+
+    // Clear attached preview immediately after the message is queued
+    setSelectedImage(null)
+    setSelectedFile(null)
 
     setLoading(true)
 
