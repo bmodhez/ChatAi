@@ -212,7 +212,11 @@ function Chat() {
         signal: controller.signal,
       })
 
-      if (!res.ok || !res.body) throw new Error('Failed to connect to AI service')
+      let errorText = ''
+      if (!res.ok) {
+        try { errorText = await res.text() } catch {}
+      }
+      if (!res.ok || !res.body) throw new Error(errorText || 'Failed to connect to AI service')
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -243,9 +247,11 @@ function Chat() {
     } catch (err) {
       if (!abortedRef.current) {
         const idNow = currentId
+        const raw = err instanceof Error ? err.message : String(err)
+        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
         if (idNow) {
           setConversations((prev) =>
-            prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: 'Sorry, I ran into an error. Please try again.' }], updatedAt: Date.now() } : c))
+            prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
           )
         }
         console.error(err)
