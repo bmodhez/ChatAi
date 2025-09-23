@@ -1,9 +1,12 @@
 export type Role = 'user' | 'assistant' | 'system'
 
+export type ChatAttachment = { type: 'image'; url: string; mimeType?: string }
+
 export type ChatMessage = {
   role: Role
   content: string
   createdAt?: number
+  attachments?: ChatAttachment[]
 }
 
 export type Conversation = {
