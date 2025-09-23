@@ -5,6 +5,7 @@ import ChatHistoryList from '../components/ChatHistoryList'
 import type { ChatMessage, Conversation, UserProfile } from '../types/chat'
 import { loadConversations, loadUser, saveConversations, saveUser } from '../lib/storage'
 import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
+import { uploadChatFile } from '../services/storage'
 
 function Sidebar({
   isMenuOpen,
@@ -62,7 +63,11 @@ function Chat() {
   const current = useMemo(() => conversations.find((c) => c.id === currentId) || null, [conversations, currentId])
   const [loading, setLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<{ dataUrl: string; mimeType: string } | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  const [scrollVersion, setScrollVersion] = useState(0)
 
   useEffect(() => {
     const u = loadUser()
@@ -133,8 +138,21 @@ function Chat() {
     if (!text || loading) return
     setInput('')
 
+    let attachmentUrl: string | null = null
+    if (selectedFile && isFirestoreEnabled()) {
+      try {
+        await ensureAuth(user?.name)
+        attachmentUrl = await uploadChatFile(selectedFile)
+      } catch {}
+    }
+
     let conv = current
-    const userMsg: ChatMessage = { role: 'user', content: text, createdAt: Date.now() }
+    const userMsg: ChatMessage = {
+      role: 'user',
+      content: text,
+      createdAt: Date.now(),
+      attachments: attachmentUrl ? [{ type: 'image', url: attachmentUrl, mimeType: selectedFile?.type }] : undefined,
+    }
 
     if (!conv) {
       conv = await createNew(userMsg)
@@ -204,6 +222,7 @@ function Chat() {
               return { ...c, messages: msgs, updatedAt: Date.now() }
             })
           )
+          setScrollVersion((v) => v + 1)
         }
       }
     } catch (err) {
@@ -224,6 +243,7 @@ function Chat() {
         }
       }
       setSelectedImage(null)
+      setSelectedFile(null)
       inputRef.current?.focus()
     }
   }
@@ -284,7 +304,7 @@ function Chat() {
           <div className='font-bold text-xl'>AI Chat Bot</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
-        <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto'>
+        <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
           <div className='max-w-3xl mx-auto px-4 py-6 space-y-4'>
             {!current || current.messages.length === 0 ? (
               <div className='text-chatgpt-secondary-dark text-center'>
@@ -303,11 +323,18 @@ function Chat() {
                     {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
                       <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
                     )}
-                    {m.content}
+                    {m.content || (m.role === 'assistant' && (
+                      <span className='inline-flex gap-1'>
+                        <span className='typing-dot'>.</span>
+                        <span className='typing-dot'>.</span>
+                        <span className='typing-dot'>.</span>
+                      </span>
+                    ))}
                   </div>
                 </div>
               ))
             )}
+          <div ref={endRef} />
           </div>
         </div>
         <div className='sm:items-center bg-chatgpt-sidebar-dark'>
@@ -323,6 +350,7 @@ function Chat() {
             onSend={handleSend}
             disabled={loading}
             onFileSelected={(file) => {
+              setSelectedFile(file)
               const reader = new FileReader()
               reader.onload = () => {
                 const result = String(reader.result)
@@ -338,3 +366,7 @@ function Chat() {
 }
 
 export default Chat
+
+// Auto scroll effect
+// Keep at end to avoid re-renders ordering issues
+// Scroll when messages added/updated or conversation changes
