@@ -308,7 +308,26 @@ function Chat() {
           </div>
         </div>
         <div className='sm:items-center bg-chatgpt-sidebar-dark'>
-          <MessagePrompt value={input} onChange={(e) => setInput(e.target.value)} onSend={handleSend} disabled={loading} />
+          {selectedImage && (
+            <div className='px-4 max-w-3xl mx-auto'>
+              <div className='text-chatgpt-secondary-dark text-sm mb-1'>Image attached</div>
+              <img src={selectedImage.dataUrl} alt='preview' className='max-h-40 rounded-lg' />
+            </div>
+          )}
+          <MessagePrompt
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onSend={handleSend}
+            disabled={loading}
+            onFileSelected={(file) => {
+              const reader = new FileReader()
+              reader.onload = () => {
+                const result = String(reader.result)
+                setSelectedImage({ dataUrl: result, mimeType: file.type || 'image/png' })
+              }
+              reader.readAsDataURL(file)
+            }}
+          />
         </div>
       </div>
     </>
