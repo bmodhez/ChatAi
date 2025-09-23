@@ -61,6 +61,7 @@ function Chat() {
   const [currentId, setCurrentId] = useState<string | null>(null)
   const current = useMemo(() => conversations.find((c) => c.id === currentId) || null, [conversations, currentId])
   const [loading, setLoading] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<{ dataUrl: string; mimeType: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
