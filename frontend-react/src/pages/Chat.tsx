@@ -4,6 +4,7 @@ import ProfileMenu from '../components/ProfileMenu'
 import ChatHistoryList from '../components/ChatHistoryList'
 import type { ChatMessage, Conversation, UserProfile } from '../types/chat'
 import { loadConversations, loadUser, saveConversations, saveUser } from '../lib/storage'
+import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
 
 function Sidebar({
   isMenuOpen,
@@ -65,33 +66,56 @@ function Chat() {
   useEffect(() => {
     const u = loadUser()
     setUser(u)
+    if (isFirestoreEnabled()) {
+      ensureAuth(u?.name).catch(() => null)
+    }
   }, [])
 
   useEffect(() => {
-    const data = loadConversations(userId)
-    setConversations(data)
-    if (data.length && !currentId) setCurrentId(data[0].id)
+    if (isFirestoreEnabled()) {
+      let unsub: null | (() => void) = null
+      ensureAuth(user?.name)
+        .then(() => {
+          unsub = watchConversations((list) => {
+            setConversations(list)
+            if (list.length && !currentId) setCurrentId((prev) => prev || list[0].id)
+          })
+        })
+        .catch(() => null)
+      return () => {
+        if (unsub) unsub()
+      }
+    } else {
+      const data = loadConversations(userId)
+      setConversations(data)
+      if (data.length && !currentId) setCurrentId(data[0].id)
+    }
   }, [userId])
 
   useEffect(() => {
-    saveConversations(userId, conversations)
+    if (!isFirestoreEnabled()) {
+      saveConversations(userId, conversations)
+    }
   }, [userId, conversations])
 
   const upsertConversation = (updater: (c: Conversation) => Conversation) => {
     setConversations((prev) => prev.map((c) => (c.id === currentId ? updater(c) : c)))
   }
 
-  const createNew = (initialMessage?: ChatMessage) => {
-    const id = `c_${Math.random().toString(36).slice(2)}`
+  const createNew = async (initialMessage?: ChatMessage) => {
     const now = Date.now()
     const title = initialMessage ? makeTitle(initialMessage.content) : 'New chat'
-    const conv: Conversation = {
-      id,
-      title,
-      messages: initialMessage ? [initialMessage] : [],
-      createdAt: now,
-      updatedAt: now,
+    if (isFirestoreEnabled()) {
+      await ensureAuth(user?.name)
+      const conv = await createConversationRemote({ title, messages: initialMessage ? [initialMessage] : [] })
+      if (conv) {
+        setConversations((prev) => [conv, ...prev])
+        setCurrentId(conv.id)
+        return conv
+      }
     }
+    const id = `c_${Math.random().toString(36).slice(2)}`
+    const conv: Conversation = { id, title, messages: initialMessage ? [initialMessage] : [], createdAt: now, updatedAt: now }
     setConversations((prev) => [conv, ...prev])
     setCurrentId(id)
     return conv
@@ -106,7 +130,7 @@ function Chat() {
     const userMsg: ChatMessage = { role: 'user', content: text, createdAt: Date.now() }
 
     if (!conv) {
-      conv = createNew(userMsg)
+      conv = await createNew(userMsg)
       const idNow = conv.id
       setConversations((prev) =>
         prev.map((c) =>
@@ -185,19 +209,26 @@ function Chat() {
     setCurrentId(id)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setConversations((prev) => prev.filter((c) => c.id !== id))
     if (currentId === id) setCurrentId(null)
+    if (isFirestoreEnabled()) {
+      await ensureAuth(user?.name)
+      await deleteConversationRemote(id)
+    }
   }
 
   const handleNew = () => {
-    createNew()
+    createNew().catch(() => null)
     setMenuOpen(false)
   }
 
   const handleLogin = (u: UserProfile) => {
     saveUser(u)
     setUser(u)
+    if (isFirestoreEnabled()) {
+      ensureAuth(u.name).then(() => upsertUser(u)).catch(() => null)
+    }
     setMenuOpen(false)
   }
   const handleLogout = () => {
