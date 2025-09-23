@@ -99,7 +99,8 @@ function apiPlugin() {
           res.end('Missing API key (set GEMINI_API_KEY or OPENAI_API_KEY)')
         } catch (err) {
           res.statusCode = 500
-          res.end('Server error')
+          const msg = (err && typeof (err as any).message === 'string') ? (err as any).message : 'Server error'
+          res.end(`Server error: ${msg}`)
           console.error('[API /api/chat] Error:', err)
         }
       })
