@@ -223,6 +223,7 @@ function Chat() {
           await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
         }
       }
+      setSelectedImage(null)
       inputRef.current?.focus()
     }
   }
