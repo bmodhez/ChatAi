@@ -107,6 +107,14 @@ function Chat() {
 
     if (!conv) {
       conv = createNew(userMsg)
+      const idNow = conv.id
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === idNow
+            ? { ...c, messages: [...c.messages, { role: 'assistant', content: '', createdAt: Date.now() }], updatedAt: Date.now() }
+            : c
+        )
+      )
     } else {
       const updated: Conversation = {
         ...conv,
