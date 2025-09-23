@@ -215,34 +215,52 @@ function Chat() {
       let errorText = ''
       if (!res.ok) {
         try { errorText = await res.text() } catch {}
+        throw new Error(errorText || 'Failed to connect to AI service')
       }
-      if (!res.ok || !res.body) throw new Error(errorText || 'Failed to connect to AI service')
 
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let done = false
       let assistantContent = ''
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read()
-        done = doneReading
-        const chunk = value ? decoder.decode(value, { stream: true }) : ''
-        if (chunk) {
-          assistantContent += chunk
-          const idNow = conv!.id
-          setConversations((prev) =>
-            prev.map((c) => {
-              if (c.id !== idNow) return c
-              const lastIdx = c.messages.length - 1
-              const msgs = [...c.messages]
-              if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
-                msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
-              }
-              return { ...c, messages: msgs, updatedAt: Date.now() }
-            })
-          )
-          setScrollVersion((v) => v + 1)
+      if (res.body && (res.body as any).getReader) {
+        const reader = (res.body as any).getReader()
+        const decoder = new TextDecoder()
+        let done = false
+        while (!done) {
+          const { value, done: doneReading } = await reader.read()
+          done = doneReading
+          const chunk = value ? decoder.decode(value, { stream: true }) : ''
+          if (chunk) {
+            assistantContent += chunk
+            const idNow = conv!.id
+            setConversations((prev) =>
+              prev.map((c) => {
+                if (c.id !== idNow) return c
+                const lastIdx = c.messages.length - 1
+                const msgs = [...c.messages]
+                if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+                  msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+                }
+                return { ...c, messages: msgs, updatedAt: Date.now() }
+              })
+            )
+            setScrollVersion((v) => v + 1)
+          }
         }
+      } else {
+        const text = await res.text()
+        assistantContent = text || ''
+        const idNow = conv!.id
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== idNow) return c
+            const lastIdx = c.messages.length - 1
+            const msgs = [...c.messages]
+            if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+              msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
+        )
+        setScrollVersion((v) => v + 1)
       }
     } catch (err) {
       if (!abortedRef.current) {
