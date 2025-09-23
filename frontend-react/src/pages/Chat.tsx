@@ -110,13 +110,15 @@ function Chat() {
     const now = Date.now()
     const title = initialMessage ? makeTitle(initialMessage.content) : 'New chat'
     if (isFirestoreEnabled()) {
-      await ensureAuth(user?.name)
-      const conv = await createConversationRemote({ title, messages: initialMessage ? [initialMessage] : [] })
-      if (conv) {
-        setConversations((prev) => [conv, ...prev])
-        setCurrentId(conv.id)
-        return conv
-      }
+      try {
+        await ensureAuth(user?.name)
+        const conv = await createConversationRemote({ title, messages: initialMessage ? [initialMessage] : [] })
+        if (conv) {
+          setConversations((prev) => [conv, ...prev])
+          setCurrentId(conv.id)
+          return conv
+        }
+      } catch {}
     }
     const id = `c_${Math.random().toString(36).slice(2)}`
     const conv: Conversation = { id, title, messages: initialMessage ? [initialMessage] : [], createdAt: now, updatedAt: now }
