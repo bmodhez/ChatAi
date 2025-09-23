@@ -68,6 +68,8 @@ function Chat() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const [scrollVersion, setScrollVersion] = useState(0)
+  const controllerRef = useRef<AbortController | null>(null)
+  const abortedRef = useRef(false)
 
   useEffect(() => {
     const u = loadUser()
@@ -137,6 +139,7 @@ function Chat() {
     const text = input.trim()
     if (!text || loading) return
     setInput('')
+    abortedRef.current = false
 
     let attachmentUrl: string | null = null
     if (selectedFile && isFirestoreEnabled()) {
@@ -199,10 +202,14 @@ function Chat() {
         imageBase64 = base64
       }
 
+      const controller = new AbortController()
+      controllerRef.current = controller
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: payloadMessages, imageBase64, imageMimeType }),
+        signal: controller.signal,
       })
 
       if (!res.ok || !res.body) throw new Error('Failed to connect to AI service')
@@ -234,15 +241,19 @@ function Chat() {
         }
       }
     } catch (err) {
-      const idNow = currentId
-      if (idNow) {
-        setConversations((prev) =>
-          prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: 'Sorry, I ran into an error. Please try again.' }], updatedAt: Date.now() } : c))
-        )
+      if (!abortedRef.current) {
+        const idNow = currentId
+        if (idNow) {
+          setConversations((prev) =>
+            prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: 'Sorry, I ran into an error. Please try again.' }], updatedAt: Date.now() } : c))
+          )
+        }
+        console.error(err)
       }
-      console.error(err)
     } finally {
       setLoading(false)
+      controllerRef.current = null
+      abortedRef.current = false
       if (isFirestoreEnabled() && conv) {
         const final = conversations.find((c) => c.id === conv!.id)
         if (final) {
@@ -253,6 +264,14 @@ function Chat() {
       setSelectedImage(null)
       setSelectedFile(null)
       inputRef.current?.focus()
+    }
+  }
+
+  const handleStop = () => {
+    if (controllerRef.current) {
+      abortedRef.current = true
+      controllerRef.current.abort()
+      setLoading(false)
     }
   }
 
@@ -357,6 +376,8 @@ function Chat() {
             onChange={(e) => setInput(e.target.value)}
             onSend={handleSend}
             disabled={loading}
+            onStop={handleStop}
+            showStop={loading}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()
