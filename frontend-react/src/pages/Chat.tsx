@@ -300,6 +300,9 @@ function Chat() {
                         : 'max-w-[85%] bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl'
                     }
                   >
+                    {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                      <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                    )}
                     {m.content}
                   </div>
                 </div>
