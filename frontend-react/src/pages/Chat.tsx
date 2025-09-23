@@ -129,7 +129,10 @@ function Chat() {
 
     try {
       const baseMessages = (conv ? conversations.find((c) => c.id === conv!.id)?.messages || [] : [])
-      const payloadMessages: ChatMessage[] = [...baseMessages.filter((m) => m.role !== 'system'), userMsg]
+      const payloadMessages: ChatMessage[] = [
+        ...baseMessages.filter((m) => m.role !== 'system' && !(m.role === 'assistant' && !m.content)),
+        userMsg,
+      ]
 
       const res = await fetch('/api/chat', {
         method: 'POST',
