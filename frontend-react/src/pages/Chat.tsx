@@ -339,8 +339,10 @@ function Chat() {
       if (isFirestoreEnabled() && conv) {
         const final = conversations.find((c) => c.id === conv!.id)
         if (final) {
-          await ensureAuth(user?.name)
-          await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
+          try {
+            await ensureAuth(user?.name)
+            await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
+          } catch {}
         }
       }
       setSelectedImage(null)
@@ -374,8 +376,10 @@ function Chat() {
     setConversations((prev) => prev.filter((c) => c.id !== id))
     if (currentId === id) setCurrentId(null)
     if (isFirestoreEnabled()) {
-      await ensureAuth(user?.name)
-      await deleteConversationRemote(id)
+      try {
+        await ensureAuth(user?.name)
+        await deleteConversationRemote(id)
+      } catch {}
     }
   }
 
