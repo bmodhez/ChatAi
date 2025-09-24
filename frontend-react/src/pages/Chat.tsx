@@ -463,19 +463,21 @@ function Chat() {
                       ) : (
                         <>
                           <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F6c1dea172d6a4b98b66fa189fb2ab1aa%2F68777098987546868e1d6fc0bfc9e343?format=webp&width=128'} />
-                          <div className='relative bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
-                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                            )}
-                            {m.content || (
-                              <span className='inline-flex gap-1'>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                              </span>
-                            )}
+                          <div className='flex-1 min-w-0'>
+                            <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
+                              {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                                <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                              )}
+                              {m.content || (
+                                <span className='inline-flex gap-1'>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                </span>
+                              )}
+                            </div>
                             {m.content && (
-                              <div className='absolute -top-3 right-2'>
+                              <div className='mt-1 flex items-center gap-2 text-xs'>
                                 <CopyButton text={m.content} label='Copy' />
                               </div>
                             )}
