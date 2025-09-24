@@ -63,7 +63,7 @@ function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onSt
             onClick={onSend}
             className='rounded-full p-[6px] bg-white disabled:opacity-60 disabled:cursor-not-allowed'
           >
-            <img src='up_arrow.svg' alt='Send' />
+            <img src='/up_arrow.svg' alt='Send' />
           </button>
         </div>
       </div>
