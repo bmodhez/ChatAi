@@ -107,7 +107,7 @@ function apiPlugin() {
             const resp = await openai.chat.completions.create({
               model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
               stream: false,
-              max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 512,
+              max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 256,
               messages: finalMsgs,
               temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
             })
