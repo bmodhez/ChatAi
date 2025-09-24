@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, updateProfile, onAuthStateChanged } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, updateProfile, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { getFirebase } from '../lib/firebase'
 import { upsertUser } from './db'
 
@@ -35,4 +35,16 @@ export function watchAuth(cb: (user: { uid: string; displayName: string | null; 
   return onAuthStateChanged(auth, (u) => {
     cb(u ? { uid: u.uid, displayName: u.displayName, email: u.email } : null)
   })
+}
+
+export async function signInWithGoogle() {
+  const fb = getFirebase()
+  if (!fb) throw new Error('Firebase is not configured. Set VITE_FIREBASE_* envs.')
+  const { auth } = fb
+  const provider = new GoogleAuthProvider()
+  provider.setCustomParameters({ prompt: 'select_account' })
+  const cred = await signInWithPopup(auth, provider)
+  const u = cred.user
+  await upsertUser({ id: u.uid, name: u.displayName || u.email || 'User', email: u.email || undefined })
+  return u
 }
