@@ -1,4 +1,5 @@
 import './App.css'
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Chat from './pages/Chat'
 import HomeAuth from './pages/Home'

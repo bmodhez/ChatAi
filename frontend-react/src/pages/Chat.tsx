@@ -12,8 +12,6 @@ import { getFirebase } from '../lib/firebase'
 import CopyButton from '../components/CopyButton'
 
 function Sidebar({
-  isMenuOpen,
-  setIsMenuOpen,
   conversations,
   currentId,
   onSelect,
@@ -145,10 +143,6 @@ function Chat() {
       saveConversations(userId, conversations)
     }
   }, [userId, conversations])
-
-  const upsertConversation = (updater: (c: Conversation) => Conversation) => {
-    setConversations((prev) => prev.map((c) => (c.id === currentId ? updater(c) : c)))
-  }
 
   const createNew = async (initialMessage?: ChatMessage) => {
     const now = Date.now()
