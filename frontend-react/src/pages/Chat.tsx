@@ -95,7 +95,7 @@ function Chat() {
         <div className='flex justify-between bg-chatgpt-sidebar-dark text-chatgpt-secondary-dark font-inter px-5 py-3'>
           <div
             className={`text-chatgpt-primary-dark cursor-pointer hover:bg-slate-500 p-1 rounded-lg ${isMenuOpen ? 'invisible' : ''}`}
-            onClick={() => setIsMenuOpen(true)}  {/* ✅ Fixed here too */}
+            onClick={() => setIsMenuOpen(true)}  {}
           >
             <img src='/nav_bar.svg' className='invert' />
           </div>
