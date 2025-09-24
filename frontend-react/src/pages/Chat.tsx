@@ -378,6 +378,7 @@ function Chat() {
     setMenuOpen(false)
   }
 
+  const fmtTime = (ts?: number) => (typeof ts === 'number' ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')
   return (
     <>
       <div className='flex flex-col h-screen relative clip-path bg-chatgpt-sidebar-dark'>
@@ -392,7 +393,7 @@ function Chat() {
             onDelete={handleDelete}
           />
         </div>
-        <div className='flex justify-between bg-chatgpt-sidebar-dark text-chatgpt-secondary-dark font-inter px-5 py-3'>
+        <div className='sticky top-0 z-40 flex justify-between bg-chatgpt-sidebar-dark text-chatgpt-secondary-dark font-inter px-5 py-3 border-b border-white/10 backdrop-blur-sm'>
           <div
             className={`text-chatgpt-primary-dark cursor-pointer hover:bg-slate-500 p-1 rounded-lg ${isMenuOpen ? 'invisible' : ''}`}
             onClick={() => setMenuOpen(true)}
@@ -417,27 +418,37 @@ function Chat() {
                       {isUser ? (
                         <>
                           <Avatar role='user' name={user?.name || null} src={userPhoto} />
-                          <div className='bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow'>
-                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                            )}
-                            {m.content}
+                          <div className='flex flex-col items-end'>
+                            <div className='bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow ring-1 ring-white/10'>
+                              {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                                <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                              )}
+                              {m.content}
+                            </div>
+                            {m.createdAt ? (
+                              <div className='text-xs text-chatgpt-secondary-dark mt-1 pr-2'>{fmtTime(m.createdAt)}</div>
+                            ) : null}
                           </div>
                         </>
                       ) : (
                         <>
                           <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F7e99381e32b842358bc2f0f81724dbf3?format=webp&width=128'} />
-                          <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow'>
-                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                            )}
-                            {m.content || (
-                              <span className='inline-flex gap-1'>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                              </span>
-                            )}
+                          <div className='flex flex-col items-start'>
+                            <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow ring-1 ring-white/10'>
+                              {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                                <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                              )}
+                              {m.content || (
+                                <span className='inline-flex gap-1'>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                </span>
+                              )}
+                            </div>
+                            {m.createdAt ? (
+                              <div className='text-xs text-chatgpt-secondary-dark mt-1 pl-2'>{fmtTime(m.createdAt)}</div>
+                            ) : null}
                           </div>
                         </>
                       )}
