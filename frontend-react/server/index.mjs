@@ -35,9 +35,9 @@ app.post('/api/chat', async (req, res) => {
       return
     }
     const { messages, imageBase64, imageMimeType } = req.body || {}
-    const apiKey = process.env.GROK_API_KEY
+    const apiKey = process.env.GROK_API_KEY || process.env.OPENAI_API_KEY
     if (!apiKey) {
-      res.status(500).json({ error: 'Server misconfiguration: GROK_API_KEY is missing' })
+      res.status(500).json({ error: 'Missing API key. Set GROK_API_KEY or OPENAI_API_KEY.' })
       return
     }
 

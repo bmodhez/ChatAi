@@ -44,6 +44,14 @@ export default function HomeAuth() {
   return (
     <div className="min-h-screen bg-chatgpt-dark text-chatgpt-primary-dark flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-chatgpt-sidebar-dark rounded-2xl p-6 shadow-xl">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <img
+            src="https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F8b1bab271c99404092fed773899efffc?format=webp&width=96"
+            alt="Algnite logo"
+            className="w-8 h-8 rounded-full object-cover"
+          />
+          <div className="text-chatgpt-primary-dark font-bold text-xl">Algnite Chat</div>
+        </div>
         <h1 className="text-2xl font-bold mb-4 text-center">{mode === 'signup' ? 'Create account' : 'Welcome back'}</h1>
         {!fbEnabled && (
           <div className="mb-4 text-chatgpt-secondary-dark text-sm">

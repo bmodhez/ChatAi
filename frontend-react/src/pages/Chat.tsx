@@ -7,6 +7,8 @@ import { loadConversations, loadUser, saveConversations, saveUser } from '../lib
 import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
 import { uploadChatFile } from '../services/storage'
 import { watchAuth } from '../services/auth'
+import Avatar from '../components/Avatar'
+import { getFirebase } from '../lib/firebase'
 
 function Sidebar({
   isMenuOpen,
@@ -71,6 +73,7 @@ function Chat() {
   const [scrollVersion, setScrollVersion] = useState(0)
   const controllerRef = useRef<AbortController | null>(null)
   const abortedRef = useRef(false)
+  const userPhoto = (() => { try { return getFirebase()?.auth?.currentUser?.photoURL || null } catch { return null } })()
 
   const msgCount = current?.messages.length || 0
   useEffect(() => {
@@ -396,38 +399,52 @@ function Chat() {
           >
             <img src='nav_bar.svg' className='invert' />
           </div>
-          <div className='font-bold text-xl'>AI Chat Bot</div>
+          <div className='font-bold text-xl'>Algnite AI</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
         <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
-          <div className='max-w-3xl mx-auto px-4 py-6 space-y-4'>
+          <div className='max-w-3xl mx-auto px-4 py-6 space-y-6 md:space-y-7'>
             {!current || current.messages.length === 0 ? (
-              <div className='text-chatgpt-secondary-dark text-center'>
-                Start a conversation. Ask questions, create content, learn skills.
+              <div className='text-center'>
+                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold'>What can I help with?</div>
               </div>
             ) : (
-              current.messages.map((m, idx) => (
-                <div key={idx} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                  <div
-                    className={
-                      m.role === 'user'
-                        ? 'max-w-[85%] bg-chatgpt-user text-white px-4 py-2 rounded-2xl'
-                        : 'max-w-[85%] bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl'
-                    }
-                  >
-                    {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                      <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                    )}
-                    {m.content || (m.role === 'assistant' && (
-                      <span className='inline-flex gap-1'>
-                        <span className='typing-dot'>.</span>
-                        <span className='typing-dot'>.</span>
-                        <span className='typing-dot'>.</span>
-                      </span>
-                    ))}
+              current.messages.map((m, idx) => {
+                const isUser = m.role === 'user'
+                return (
+                  <div key={idx} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
+                    <div className={isUser ? 'flex items-end gap-3 max-w-[85%] justify-end' : 'flex items-end gap-3 max-w-[85%]'}>
+                      {isUser ? (
+                        <>
+                          <Avatar role='user' name={user?.name || null} src={userPhoto} />
+                          <div className='bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
+                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                            )}
+                            {m.content}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F7e99381e32b842358bc2f0f81724dbf3?format=webp&width=128'} />
+                          <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
+                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                            )}
+                            {m.content || (
+                              <span className='inline-flex gap-1'>
+                                <span className='typing-dot'>.</span>
+                                <span className='typing-dot'>.</span>
+                                <span className='typing-dot'>.</span>
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           <div ref={endRef} />
           </div>
@@ -447,6 +464,8 @@ function Chat() {
             onStop={handleStop}
             showStop={loading}
             inputRef={inputRef}
+            placeholder={'Ask anything'}
+            emphasizePlaceholder={!current || current.messages.length === 0}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()
