@@ -46,7 +46,7 @@ app.post('/api/chat', async (req, res) => {
       messages: toOpenAIContent(messages, imageBase64, imageMimeType),
       stream: false,
       temperature: 0.7,
-      max_tokens: typeof (req.body?.max_tokens) === 'number' ? req.body.max_tokens : 512,
+      max_tokens: typeof (req.body?.max_tokens) === 'number' ? req.body.max_tokens : 256,
     }
 
     const baseURL = process.env.GROK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
