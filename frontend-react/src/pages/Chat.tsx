@@ -413,29 +413,33 @@ function Chat() {
                 const isUser = m.role === 'user'
                 return (
                   <div key={idx} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
-                    <div className={isUser ? 'flex items-end gap-2 flex-row-reverse max-w-[90%]' : 'flex items-end gap-2 max-w-[90%]'}>
-                      <div
-                        className={
-                          isUser
-                            ? 'bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow'
-                            : 'bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow'
-                        }
-                      >
-                        {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                          <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                        )}
-                        {m.content || (m.role === 'assistant' && (
-                          <span className='inline-flex gap-1'>
-                            <span className='typing-dot'>.</span>
-                            <span className='typing-dot'>.</span>
-                            <span className='typing-dot'>.</span>
-                          </span>
-                        ))}
-                      </div>
+                    <div className={isUser ? 'flex items-end gap-2 max-w-[90%] justify-end' : 'flex items-end gap-2 max-w-[90%]'}>
                       {isUser ? (
-                        <Avatar role='user' name={user?.name || null} src={userPhoto} />
+                        <>
+                          <div className='bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow'>
+                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                            )}
+                            {m.content}
+                          </div>
+                          <Avatar role='user' name={user?.name || null} src={userPhoto} />
+                        </>
                       ) : (
-                        <Avatar role='assistant' />
+                        <>
+                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F7e99381e32b842358bc2f0f81724dbf3?format=webp&width=128'} />
+                          <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow'>
+                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                            )}
+                            {m.content || (
+                              <span className='inline-flex gap-1'>
+                                <span className='typing-dot'>.</span>
+                                <span className='typing-dot'>.</span>
+                                <span className='typing-dot'>.</span>
+                              </span>
+                            )}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
