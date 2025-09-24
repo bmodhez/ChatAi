@@ -81,7 +81,7 @@ function apiPlugin() {
               baseURL: (process.env as any).OPENAI_BASE_URL || undefined,
             })
             const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+              model: process.env.OPENAI_MODEL || ((process.env.OPENAI_BASE_URL || '').includes('openrouter.ai') ? 'openai/gpt-4o-mini' : 'gpt-4o-mini'),
               stream: true,
               messages: [
                 { role: 'system', content: system },
