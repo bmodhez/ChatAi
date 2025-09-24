@@ -369,6 +369,7 @@ function Chat() {
     setMenuOpen(false)
   }
   const handleLogout = () => {
+    try { import('../services/auth').then(m => m.signOut()) } catch {}
     saveUser(null)
     setUser(null)
     setMenuOpen(false)
