@@ -403,7 +403,7 @@ function Chat() {
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
         <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
-          <div className='max-w-3xl mx-auto px-4 py-6 space-y-4'>
+          <div className='max-w-3xl mx-auto px-4 py-6 space-y-6 md:space-y-7'>
             {!current || current.messages.length === 0 ? (
               <div className='text-center'>
                 <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold'>What can I help with?</div>
