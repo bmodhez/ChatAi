@@ -399,7 +399,7 @@ function Chat() {
           >
             <img src='nav_bar.svg' className='invert' />
           </div>
-          <div className='font-bold text-xl'>AI Chat Bot</div>
+          <div className='font-bold text-xl'>Algnite AI</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
         <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
@@ -464,6 +464,8 @@ function Chat() {
             onStop={handleStop}
             showStop={loading}
             inputRef={inputRef}
+            placeholder={!current || current.messages.length === 0 ? 'What can I help with?' : 'Ask anything'}
+            emphasizePlaceholder={!current || current.messages.length === 0}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()
