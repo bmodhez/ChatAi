@@ -405,8 +405,8 @@ function Chat() {
         <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
           <div className='max-w-3xl mx-auto px-4 py-6 space-y-4'>
             {!current || current.messages.length === 0 ? (
-              <div className='text-chatgpt-secondary-dark text-center'>
-                Start a conversation. Ask questions, create content, learn skills.
+              <div className='text-center'>
+                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold'>What can I help with?</div>
               </div>
             ) : (
               current.messages.map((m, idx) => {
@@ -464,7 +464,7 @@ function Chat() {
             onStop={handleStop}
             showStop={loading}
             inputRef={inputRef}
-            placeholder={!current || current.messages.length === 0 ? 'What can I help with?' : 'Ask anything'}
+            placeholder={'Ask anything'}
             emphasizePlaceholder={!current || current.messages.length === 0}
             onFileSelected={(file) => {
               setSelectedFile(file)
