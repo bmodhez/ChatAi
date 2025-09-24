@@ -426,7 +426,7 @@ function Chat() {
                         </>
                       ) : (
                         <>
-                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F7e99381e32b842358bc2f0f81724dbf3?format=webp&width=128'} />
+                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F6c1dea172d6a4b98b66fa189fb2ab1aa%2F68777098987546868e1d6fc0bfc9e343?format=webp&width=128'} />
                           <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
                             {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
                               <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
