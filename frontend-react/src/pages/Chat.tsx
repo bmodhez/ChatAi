@@ -7,6 +7,8 @@ import { loadConversations, loadUser, saveConversations, saveUser } from '../lib
 import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
 import { uploadChatFile } from '../services/storage'
 import { watchAuth } from '../services/auth'
+import Avatar from '../components/Avatar'
+import { getFirebase } from '../lib/firebase'
 
 function Sidebar({
   isMenuOpen,
@@ -71,6 +73,7 @@ function Chat() {
   const [scrollVersion, setScrollVersion] = useState(0)
   const controllerRef = useRef<AbortController | null>(null)
   const abortedRef = useRef(false)
+  const userPhoto = (() => { try { return getFirebase()?.auth?.currentUser?.photoURL || null } catch { return null } })()
 
   const msgCount = current?.messages.length || 0
   useEffect(() => {
@@ -406,28 +409,38 @@ function Chat() {
                 Start a conversation. Ask questions, create content, learn skills.
               </div>
             ) : (
-              current.messages.map((m, idx) => (
-                <div key={idx} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                  <div
-                    className={
-                      m.role === 'user'
-                        ? 'max-w-[85%] bg-chatgpt-user text-white px-4 py-2 rounded-2xl'
-                        : 'max-w-[85%] bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl'
-                    }
-                  >
-                    {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                      <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                    )}
-                    {m.content || (m.role === 'assistant' && (
-                      <span className='inline-flex gap-1'>
-                        <span className='typing-dot'>.</span>
-                        <span className='typing-dot'>.</span>
-                        <span className='typing-dot'>.</span>
-                      </span>
-                    ))}
+              current.messages.map((m, idx) => {
+                const isUser = m.role === 'user'
+                return (
+                  <div key={idx} className={isUser ? 'flex justify-end' : 'flex justify-start'}>
+                    <div className={isUser ? 'flex items-end gap-2 flex-row-reverse max-w-[90%]' : 'flex items-end gap-2 max-w-[90%]'}>
+                      <div
+                        className={
+                          isUser
+                            ? 'bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow'
+                            : 'bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow'
+                        }
+                      >
+                        {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                          <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                        )}
+                        {m.content || (m.role === 'assistant' && (
+                          <span className='inline-flex gap-1'>
+                            <span className='typing-dot'>.</span>
+                            <span className='typing-dot'>.</span>
+                            <span className='typing-dot'>.</span>
+                          </span>
+                        ))}
+                      </div>
+                      {isUser ? (
+                        <Avatar role='user' name={user?.name || null} src={userPhoto} />
+                      ) : (
+                        <Avatar role='assistant' />
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           <div ref={endRef} />
           </div>
