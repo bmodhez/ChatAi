@@ -64,7 +64,7 @@ function Chat() {
   const [loading, setLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<{ dataUrl: string; mimeType: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const [scrollVersion, setScrollVersion] = useState(0)
@@ -269,15 +269,63 @@ function Chat() {
       }
     } catch (err) {
       if (!abortedRef.current) {
-        const idNow = currentId
-        const raw = err instanceof Error ? err.message : String(err)
-        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
-        if (idNow) {
+        // Fallback: direct client request to OpenRouter/OpenAI when dev server API is unavailable
+        try {
+          const apiKey = (import.meta as any).env?.VITE_OPENAI_API_KEY as string | undefined
+          const baseUrl = ((import.meta as any).env?.VITE_OPENAI_BASE_URL as string | undefined) || 'https://openrouter.ai/api/v1'
+          const model = ((import.meta as any).env?.VITE_OPENAI_MODEL as string | undefined) || 'openai/gpt-4o-mini'
+
+          if (!apiKey) throw new Error('AI service unavailable. Set VITE_OPENAI_API_KEY and VITE_OPENAI_BASE_URL for client fallback.')
+
+          const openaiMessages = [
+            // Keep a concise system primer
+            { role: 'system', content: 'You are a helpful, concise assistant.' },
+            ...payloadMessages.map((m) => ({ role: m.role, content: String(m.content ?? '') })),
+          ]
+
+          const resp2 = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': typeof location !== 'undefined' ? location.origin : '',
+              'X-Title': 'AI Chat Bot',
+            },
+            body: JSON.stringify({ model, messages: openaiMessages, stream: false, temperature: 0.7 }),
+          })
+
+          let errText = ''
+          if (!resp2.ok) {
+            try { errText = await resp2.text() } catch {}
+            throw new Error(errText || `AI request failed (${resp2.status})`)
+          }
+          const data = await resp2.json()
+          const content = data?.choices?.[0]?.message?.content || ''
+
+          const idNow = conv!.id
           setConversations((prev) =>
-            prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
+            prev.map((c) => {
+              if (c.id !== idNow) return c
+              const lastIdx = c.messages.length - 1
+              const msgs = [...c.messages]
+              if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+                msgs[lastIdx] = { ...msgs[lastIdx], content }
+              }
+              return { ...c, messages: msgs, updatedAt: Date.now() }
+            })
           )
+          setScrollVersion((v) => v + 1)
+        } catch (fallbackErr) {
+          const idNow = currentId
+          const raw = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)
+          const reason = /API key/i.test(raw) ? raw : (raw || 'Failed to connect to AI service')
+          if (idNow) {
+            setConversations((prev) =>
+              prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
+            )
+          }
+          console.error(fallbackErr)
         }
-        console.error(err)
       }
     } finally {
       setLoading(false)
@@ -407,6 +455,7 @@ function Chat() {
             disabled={loading}
             onStop={handleStop}
             showStop={loading}
+            inputRef={inputRef}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()
