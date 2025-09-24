@@ -1,4 +1,4 @@
-import { onAuthStateChanged, signInAnonymously, updateProfile } from 'firebase/auth'
+import {signInAnonymously, updateProfile } from 'firebase/auth'
 import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, getDoc } from 'firebase/firestore'
 import { getFirebase } from '../lib/firebase'
 import type { Conversation, ChatMessage, UserProfile } from '../types/chat'
