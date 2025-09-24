@@ -50,5 +50,3 @@ export default function App(): JSX.Element {
     </BrowserRouter>
   )
 }
-
-const revene
