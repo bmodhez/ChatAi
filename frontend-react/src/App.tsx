@@ -13,7 +13,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
   useEffect(() => {
     if (!fb) {
-      setAuthed(false)
+      setAuthed(true)
       setLoading(false)
       return
     }

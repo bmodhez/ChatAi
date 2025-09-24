@@ -9,6 +9,7 @@ import { uploadChatFile } from '../services/storage'
 import { watchAuth } from '../services/auth'
 import Avatar from '../components/Avatar'
 import { getFirebase } from '../lib/firebase'
+import CopyButton from '../components/CopyButton'
 
 function Sidebar({
   isMenuOpen,
@@ -31,7 +32,7 @@ function Sidebar({
     <div className={`min-w-60 px-2 py-2 h-screen bg-chatgpt-dark z-50`}>
       <div className={`flex justify-between font-inter text-chatgpt-primary-dark`}>
         <div className='cursor-pointer hover:bg-slate-500 p-1 rounded-lg' onClick={() => setIsMenuOpen(false)}>
-          <img src='nav_bar.svg' className='invert' />
+          <img src='/nav_bar.svg' className='invert' />
         </div>
         <div></div>
       </div>
@@ -74,11 +75,31 @@ function Chat() {
   const controllerRef = useRef<AbortController | null>(null)
   const abortedRef = useRef(false)
   const userPhoto = (() => { try { return getFirebase()?.auth?.currentUser?.photoURL || null } catch { return null } })()
+  const [showScrollDown, setShowScrollDown] = useState(false)
+
+  const suggestions = [
+    'Brainstorm marketing ideas for a new cafe',
+    'Write a polite email to reschedule a meeting',
+    'Explain React hooks like I am new to coding',
+    'Summarize the key points from a long article',
+  ]
 
   const msgCount = current?.messages.length || 0
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [scrollVersion, currentId, msgCount])
+
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const onScroll = () => {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
+      setShowScrollDown(!nearBottom)
+    }
+    el.addEventListener('scroll', onScroll)
+    onScroll()
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     const u = loadUser()
@@ -318,8 +339,10 @@ function Chat() {
       if (isFirestoreEnabled() && conv) {
         const final = conversations.find((c) => c.id === conv!.id)
         if (final) {
-          await ensureAuth(user?.name)
-          await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
+          try {
+            await ensureAuth(user?.name)
+            await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
+          } catch {}
         }
       }
       setSelectedImage(null)
@@ -353,8 +376,10 @@ function Chat() {
     setConversations((prev) => prev.filter((c) => c.id !== id))
     if (currentId === id) setCurrentId(null)
     if (isFirestoreEnabled()) {
-      await ensureAuth(user?.name)
-      await deleteConversationRemote(id)
+      try {
+        await ensureAuth(user?.name)
+        await deleteConversationRemote(id)
+      } catch {}
     }
   }
 
@@ -397,7 +422,7 @@ function Chat() {
             className={`text-chatgpt-primary-dark cursor-pointer hover:bg-slate-500 p-1 rounded-lg ${isMenuOpen ? 'invisible' : ''}`}
             onClick={() => setMenuOpen(true)}
           >
-            <img src='nav_bar.svg' className='invert' />
+            <img src='/nav_bar.svg' className='invert' />
           </div>
           <div className='font-bold text-xl'>Algnite AI</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
@@ -406,7 +431,18 @@ function Chat() {
           <div className='max-w-3xl mx-auto px-4 py-6 space-y-6 md:space-y-7'>
             {!current || current.messages.length === 0 ? (
               <div className='text-center'>
-                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold'>What can I help with?</div>
+                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold mb-4'>What can I help with?</div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4'>
+                  {suggestions.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setInput(s); inputRef.current?.focus() }}
+                      className='text-left bg-chatgpt-dark text-chatgpt-primary-dark rounded-2xl p-4 hover:opacity-90'
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
               current.messages.map((m, idx) => {
@@ -426,17 +462,24 @@ function Chat() {
                         </>
                       ) : (
                         <>
-                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F7e99381e32b842358bc2f0f81724dbf3?format=webp&width=128'} />
-                          <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
-                            {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
-                              <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
-                            )}
-                            {m.content || (
-                              <span className='inline-flex gap-1'>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                                <span className='typing-dot'>.</span>
-                              </span>
+                          <Avatar role='assistant' src={'https://cdn.builder.io/api/v1/image/assets%2F6c1dea172d6a4b98b66fa189fb2ab1aa%2F68777098987546868e1d6fc0bfc9e343?format=webp&width=128'} />
+                          <div className='flex-1 min-w-0'>
+                            <div className='bg-chatgpt-dark text-chatgpt-primary-dark px-4 py-2 rounded-2xl shadow leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base'>
+                              {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
+                                <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
+                              )}
+                              {m.content || (
+                                <span className='inline-flex gap-1'>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                  <span className='typing-dot'>.</span>
+                                </span>
+                              )}
+                            </div>
+                            {m.content && (
+                              <div className='mt-1 flex items-center gap-2 text-xs'>
+                                <CopyButton text={m.content} label='Copy' />
+                              </div>
                             )}
                           </div>
                         </>
@@ -449,6 +492,15 @@ function Chat() {
           <div ref={endRef} />
           </div>
         </div>
+        {showScrollDown && (
+          <button
+            onClick={() => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })}
+            className='fixed bottom-28 right-6 bg-chatgpt-user text-white rounded-full px-3 py-2 shadow hover:opacity-90'
+            aria-label='Scroll to bottom'
+          >
+            ↓
+          </button>
+        )}
         <div className='sm:items-center bg-chatgpt-sidebar-dark'>
           {selectedImage && (
             <div className='px-4 max-w-3xl mx-auto'>

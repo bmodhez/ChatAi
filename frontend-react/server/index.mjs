@@ -35,9 +35,9 @@ app.post('/api/chat', async (req, res) => {
       return
     }
     const { messages, imageBase64, imageMimeType } = req.body || {}
-    const apiKey = process.env.GROK_API_KEY || process.env.OPENAI_API_KEY
+    const apiKey = process.env.GROK_API_KEY
     if (!apiKey) {
-      res.status(500).json({ error: 'Missing API key. Set GROK_API_KEY or OPENAI_API_KEY.' })
+      res.status(500).json({ error: 'Missing API key. Set GROK_API_KEY.' })
       return
     }
 
@@ -46,7 +46,7 @@ app.post('/api/chat', async (req, res) => {
       messages: toOpenAIContent(messages, imageBase64, imageMimeType),
       stream: false,
       temperature: 0.7,
-      max_tokens: typeof (req.body?.max_tokens) === 'number' ? req.body.max_tokens : 512,
+      max_tokens: typeof (req.body?.max_tokens) === 'number' ? req.body.max_tokens : 256,
     }
 
     const baseURL = process.env.GROK_BASE_URL || process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'

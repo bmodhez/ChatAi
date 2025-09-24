@@ -46,8 +46,8 @@ export default function HomeAuth() {
       <div className="w-full max-w-md bg-chatgpt-sidebar-dark rounded-2xl p-6 shadow-xl">
         <div className="flex items-center justify-center gap-2 mb-2">
           <img
-            src="https://cdn.builder.io/api/v1/image/assets%2F2d9a6554584f4d3ea64314477a873f8e%2F8b1bab271c99404092fed773899efffc?format=webp&width=96"
-            alt="Algnite logo"
+            src="https://cdn.builder.io/api/v1/image/assets%2F6c1dea172d6a4b98b66fa189fb2ab1aa%2F68777098987546868e1d6fc0bfc9e343?format=webp&width=96"
+            alt="App logo"
             className="w-8 h-8 rounded-full object-cover"
           />
           <div className="text-chatgpt-primary-dark font-bold text-xl">Algnite Chat</div>
