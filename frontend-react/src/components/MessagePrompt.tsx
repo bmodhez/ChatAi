@@ -3,21 +3,23 @@ import InputForChatGpt from './InputForChatGpt'
 
 type Props = {
   value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
   onSend: () => void
   onFileSelected?: (file: File) => void
   disabled?: boolean
   onStop?: () => void
   showStop?: boolean
+  inputRef?: React.Ref<HTMLTextAreaElement>
 }
 
-function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onStop, showStop }: Props) {
+function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onStop, showStop, inputRef }: Props) {
   return (
     <>
       <div className='px-2 py-3 rounded-2xl mx-2 sm:mx-20 my-3 bg-chatgpt-dark md:mx-36 lg:mx-72'>
         <div className='flex justify-between mx-3 items-center gap-2'>
           <div className='flex-1'>
             <InputForChatGpt
+              ref={inputRef as any}
               value={value}
               onChange={onChange}
               onKeyDown={(e) => {

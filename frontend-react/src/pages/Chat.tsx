@@ -6,6 +6,7 @@ import type { ChatMessage, Conversation, UserProfile } from '../types/chat'
 import { loadConversations, loadUser, saveConversations, saveUser } from '../lib/storage'
 import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
 import { uploadChatFile } from '../services/storage'
+import { watchAuth } from '../services/auth'
 
 function Sidebar({
   isMenuOpen,
@@ -64,18 +65,29 @@ function Chat() {
   const [loading, setLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<{ dataUrl: string; mimeType: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const [scrollVersion, setScrollVersion] = useState(0)
   const controllerRef = useRef<AbortController | null>(null)
   const abortedRef = useRef(false)
 
+  const msgCount = current?.messages.length || 0
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [scrollVersion, currentId, msgCount])
+
   useEffect(() => {
     const u = loadUser()
     setUser(u)
     if (isFirestoreEnabled()) {
       ensureAuth(u?.name).catch(() => null)
+      const unsub = watchAuth((fu) => {
+        if (fu) {
+          setUser({ id: fu.uid, name: fu.displayName || fu.email || 'User', email: fu.email || undefined })
+        }
+      })
+      return () => unsub()
     }
   }, [])
 
@@ -215,40 +227,80 @@ function Chat() {
       let errorText = ''
       if (!res.ok) {
         try { errorText = await res.text() } catch {}
+        throw new Error(errorText || 'Failed to connect to AI service')
       }
-      if (!res.ok || !res.body) throw new Error(errorText || 'Failed to connect to AI service')
 
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let done = false
       let assistantContent = ''
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read()
-        done = doneReading
-        const chunk = value ? decoder.decode(value, { stream: true }) : ''
-        if (chunk) {
-          assistantContent += chunk
-          const idNow = conv!.id
-          setConversations((prev) =>
-            prev.map((c) => {
-              if (c.id !== idNow) return c
-              const lastIdx = c.messages.length - 1
-              const msgs = [...c.messages]
-              if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
-                msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
-              }
-              return { ...c, messages: msgs, updatedAt: Date.now() }
-            })
-          )
-          setScrollVersion((v) => v + 1)
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('application/json')) {
+        let data: any = null
+        try { data = await res.json() } catch { data = null }
+        const text = data?.text || data?.choices?.[0]?.message?.content || ''
+        assistantContent = text
+        const idNow = conv!.id
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== idNow) return c
+            const lastIdx = c.messages.length - 1
+            const msgs = [...c.messages]
+            if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+              msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
+        )
+        setScrollVersion((v) => v + 1)
+      } else if (res.body && (res.body as any).getReader) {
+        const reader = (res.body as any).getReader()
+        const decoder = new TextDecoder()
+        let done = false
+        while (!done) {
+          const { value, done: doneReading } = await reader.read()
+          done = doneReading
+          const chunk = value ? decoder.decode(value, { stream: true }) : ''
+          if (chunk) {
+            assistantContent += chunk
+            const idNow = conv!.id
+            setConversations((prev) =>
+              prev.map((c) => {
+                if (c.id !== idNow) return c
+                const lastIdx = c.messages.length - 1
+                const msgs = [...c.messages]
+                if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+                  msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+                }
+                return { ...c, messages: msgs, updatedAt: Date.now() }
+              })
+            )
+            setScrollVersion((v) => v + 1)
+          }
         }
+      } else {
+        const text = await res.text()
+        assistantContent = text || ''
+        const idNow = conv!.id
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== idNow) return c
+            const lastIdx = c.messages.length - 1
+            const msgs = [...c.messages]
+            if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+              msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
+        )
+        setScrollVersion((v) => v + 1)
       }
     } catch (err) {
-      if (!abortedRef.current) {
+      const raw = err instanceof Error ? err.message : String(err)
+      const isAbort = (err as any)?.name === 'AbortError' || /AbortError/i.test(raw)
+      if (isAbort) {
+        // swallow aborts silently
+      } else if (!abortedRef.current) {
         const idNow = currentId
-        const raw = err instanceof Error ? err.message : String(err)
-        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
+        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set GROK_API_KEY (and optionally GROK_BASE_URL) in the server environment.' : raw
         if (idNow) {
           setConversations((prev) =>
             prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
@@ -274,10 +326,19 @@ function Chat() {
   }
 
   const handleStop = () => {
-    if (controllerRef.current) {
-      abortedRef.current = true
-      controllerRef.current.abort()
-      setLoading(false)
+    try {
+      if (controllerRef.current) {
+        abortedRef.current = true
+        // Provide a reason for better diagnostics (supported in modern browsers)
+        try {
+          ;(controllerRef.current.abort as any)?.('stopped-by-user')
+        } catch {
+          controllerRef.current.abort()
+        }
+        setLoading(false)
+      }
+    } catch {
+      // ignore
     }
   }
 
@@ -308,6 +369,7 @@ function Chat() {
     setMenuOpen(false)
   }
   const handleLogout = () => {
+    try { import('../services/auth').then(m => m.signOut()) } catch {}
     saveUser(null)
     setUser(null)
     setMenuOpen(false)
@@ -384,6 +446,7 @@ function Chat() {
             disabled={loading}
             onStop={handleStop}
             showStop={loading}
+            inputRef={inputRef}
             onFileSelected={(file) => {
               setSelectedFile(file)
               const reader = new FileReader()

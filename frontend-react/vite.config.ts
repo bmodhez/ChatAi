@@ -28,12 +28,11 @@ function apiPlugin() {
               : 'You are a production-grade AI assistant for chat. Help users ask questions, create content, learn new skills, and get real-time, accurate, and safe solutions. Be concise, friendly, and actionable.'
 
           const useGemini = !!process.env.GEMINI_API_KEY
-          const useOpenAI = !!process.env.OPENAI_API_KEY
+          const grokKey = process.env.GROK_API_KEY
+          const useOpenAI = !!(grokKey || process.env.OPENAI_API_KEY)
 
-          res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-          res.setHeader('Transfer-Encoding', 'chunked')
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.setHeader('Cache-Control', 'no-cache')
-          res.setHeader('Connection', 'keep-alive')
 
           if (useGemini) {
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string)
@@ -76,30 +75,54 @@ function apiPlugin() {
           }
 
           if (useOpenAI) {
-            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-            const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-              stream: true,
-              messages: [
-                { role: 'system', content: system },
-                ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-              ],
+            const baseURL = (process.env as any).GROK_BASE_URL || (process.env as any).OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
+            const openai = new OpenAI({
+              apiKey: (grokKey as string) || (process.env.OPENAI_API_KEY as string),
+              baseURL,
+              defaultHeaders: baseURL.includes('openrouter.ai') ? {
+                'HTTP-Referer': process.env.DEPLOY_URL || 'http://localhost:5173',
+                'X-Title': 'AI Chat Bot',
+              } : undefined,
+            } as any)
+            const imageBase64 = typeof body?.imageBase64 === 'string' ? body.imageBase64 : undefined
+            const imageMimeType = typeof body?.imageMimeType === 'string' ? body.imageMimeType : undefined
+
+            const baseMsgs: any[] = messages.map((m: any) => ({ role: m.role, content: m.content }))
+            let finalMsgs: any[] = [{ role: 'system', content: system }, ...baseMsgs]
+            if (imageBase64 && imageMimeType) {
+              const dataUrl = `data:${imageMimeType};base64,${imageBase64}`
+              for (let i = finalMsgs.length - 1; i >= 0; i--) {
+                if (finalMsgs[i].role === 'user') {
+                  const c = finalMsgs[i].content
+                  const textPart = Array.isArray(c) ? c : [{ type: 'text', text: String(c ?? '') }]
+                  finalMsgs[i] = {
+                    role: 'user',
+                    content: [...textPart, { type: 'image_url', image_url: { url: dataUrl } }],
+                  }
+                  break
+                }
+              }
+            }
+
+            const resp = await openai.chat.completions.create({
+              model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
+              stream: false,
+              max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 512,
+              messages: finalMsgs,
               temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
             })
 
-            for await (const part of stream) {
-              const delta = part.choices?.[0]?.delta?.content || ''
-              if (delta) res.write(delta)
-            }
-            res.end()
+            const text = (resp as any)?.choices?.[0]?.message?.content || ''
+            res.end(JSON.stringify({ text }))
             return
           }
 
           res.statusCode = 500
-          res.end('Missing API key (set GEMINI_API_KEY or OPENAI_API_KEY)')
+          res.end(JSON.stringify({ error: 'Missing API key (set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY)' }))
         } catch (err) {
           res.statusCode = 500
-          res.end('Server error')
+          const msg = (err && typeof (err as any).message === 'string') ? (err as any).message : 'Server error'
+          res.end(JSON.stringify({ error: msg }))
           console.error('[API /api/chat] Error:', err)
         }
       })
