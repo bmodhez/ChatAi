@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getFirebase } from '../lib/firebase'
-import { signInWithEmail, signUpWithEmail, watchAuth } from '../services/auth'
+import { signInWithEmail, signUpWithEmail, watchAuth, signInWithGoogle } from '../services/auth'
 
 export default function HomeAuth() {
   const navigate = useNavigate()
@@ -82,6 +82,30 @@ export default function HomeAuth() {
             {loading ? 'Please wait…' : mode === 'signup' ? 'Sign up' : 'Login'}
           </button>
         </form>
+        <div className="my-3 flex items-center gap-2 text-chatgpt-secondary-dark">
+          <div className="h-px bg-chatgpt-dark flex-1" />
+          <div className="text-xs">OR</div>
+          <div className="h-px bg-chatgpt-dark flex-1" />
+        </div>
+        <button
+          onClick={async () => {
+            setError(null)
+            setLoading(true)
+            try {
+              if (!fbEnabled) throw new Error('Firebase not configured')
+              await signInWithGoogle()
+              navigate('/chat', { replace: true })
+            } catch (e) {
+              const m = e instanceof Error ? e.message : String(e)
+              setError(m)
+            } finally {
+              setLoading(false)
+            }
+          }}
+          className="w-full bg-white text-black px-3 py-2 rounded-lg hover:opacity-90"
+        >
+          Continue with Google
+        </button>
         <div className="mt-4 text-center text-sm text-chatgpt-secondary-dark">
           {mode === 'signup' ? (
             <button className="underline" onClick={() => setMode('login')}>Have an account? Login</button>
