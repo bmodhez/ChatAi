@@ -225,7 +225,26 @@ function Chat() {
 
       let assistantContent = ''
 
-      if (res.body && (res.body as any).getReader) {
+      const ct = res.headers.get('content-type') || ''
+      if (ct.includes('application/json')) {
+        let data: any = null
+        try { data = await res.json() } catch { data = null }
+        const text = data?.text || data?.choices?.[0]?.message?.content || ''
+        assistantContent = text
+        const idNow = conv!.id
+        setConversations((prev) =>
+          prev.map((c) => {
+            if (c.id !== idNow) return c
+            const lastIdx = c.messages.length - 1
+            const msgs = [...c.messages]
+            if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+              msgs[lastIdx] = { ...msgs[lastIdx], content: assistantContent }
+            }
+            return { ...c, messages: msgs, updatedAt: Date.now() }
+          })
+        )
+        setScrollVersion((v) => v + 1)
+      } else if (res.body && (res.body as any).getReader) {
         const reader = (res.body as any).getReader()
         const decoder = new TextDecoder()
         let done = false
@@ -251,16 +270,8 @@ function Chat() {
           }
         }
       } else {
-        const ct = res.headers.get('content-type') || ''
-        if (ct.includes('application/json')) {
-          let data: any = null
-          try { data = await res.json() } catch { data = null }
-          const text = data?.text || data?.choices?.[0]?.message?.content || ''
-          assistantContent = text
-        } else {
-          const text = await res.text()
-          assistantContent = text || ''
-        }
+        const text = await res.text()
+        assistantContent = text || ''
         const idNow = conv!.id
         setConversations((prev) =>
           prev.map((c) => {
