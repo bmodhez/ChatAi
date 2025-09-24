@@ -31,10 +31,8 @@ function apiPlugin() {
           const grokKey = process.env.GROK_API_KEY
           const useOpenAI = !!(grokKey || process.env.OPENAI_API_KEY)
 
-          res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-          res.setHeader('Transfer-Encoding', 'chunked')
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.setHeader('Cache-Control', 'no-cache')
-          res.setHeader('Connection', 'keep-alive')
 
           if (useGemini) {
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string)
@@ -77,7 +75,7 @@ function apiPlugin() {
           }
 
           if (useOpenAI) {
-            const baseURL = (process.env as any).OPENAI_BASE_URL || (process.env as any).GROK_BASE_URL || 'https://openrouter.ai/api/v1'
+            const baseURL = (process.env as any).GROK_BASE_URL || (process.env as any).OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
             const openai = new OpenAI({
               apiKey: (grokKey as string) || (process.env.OPENAI_API_KEY as string),
               baseURL,
@@ -86,9 +84,10 @@ function apiPlugin() {
                 'X-Title': 'AI Chat Bot',
               } : undefined,
             } as any)
-            const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
-              stream: true,
+            const resp = await openai.chat.completions.create({
+              model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
+              stream: false,
+              max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 512,
               messages: [
                 { role: 'system', content: system },
                 ...messages.map((m: any) => ({ role: m.role, content: m.content })),
@@ -96,20 +95,17 @@ function apiPlugin() {
               temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
             })
 
-            for await (const part of stream) {
-              const delta = part.choices?.[0]?.delta?.content || ''
-              if (delta) res.write(delta)
-            }
-            res.end()
+            const text = (resp as any)?.choices?.[0]?.message?.content || ''
+            res.end(JSON.stringify({ text }))
             return
           }
 
           res.statusCode = 500
-          res.end('Missing API key (set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY)')
+          res.end(JSON.stringify({ error: 'Missing API key (set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY)' }))
         } catch (err) {
           res.statusCode = 500
           const msg = (err && typeof (err as any).message === 'string') ? (err as any).message : 'Server error'
-          res.end(`Server error: ${msg}`)
+          res.end(JSON.stringify({ error: msg }))
           console.error('[API /api/chat] Error:', err)
         }
       })
