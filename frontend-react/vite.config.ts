@@ -29,7 +29,7 @@ function apiPlugin() {
 
           const useGemini = !!process.env.GEMINI_API_KEY
           const grokKey = process.env.GROK_API_KEY
-          const useOpenAI = !!(grokKey || process.env.OPENAI_API_KEY)
+          const useGrok = !!grokKey
 
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.setHeader('Cache-Control', 'no-cache')
@@ -74,10 +74,10 @@ function apiPlugin() {
             return
           }
 
-          if (useOpenAI) {
+          if (useGrok) {
             const baseURL = (process.env as any).GROK_BASE_URL || (process.env as any).OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
             const openai = new OpenAI({
-              apiKey: (grokKey as string) || (process.env.OPENAI_API_KEY as string),
+              apiKey: grokKey as string,
               baseURL,
               defaultHeaders: baseURL.includes('openrouter.ai') ? {
                 'HTTP-Referer': process.env.DEPLOY_URL || 'http://localhost:5173',
@@ -118,7 +118,7 @@ function apiPlugin() {
           }
 
           res.statusCode = 500
-          res.end(JSON.stringify({ error: 'Missing API key (set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY)' }))
+          res.end(JSON.stringify({ error: 'Missing API key (set GROK_API_KEY or GEMINI_API_KEY)' }))
         } catch (err) {
           res.statusCode = 500
           const msg = (err && typeof (err as any).message === 'string') ? (err as any).message : 'Server error'
