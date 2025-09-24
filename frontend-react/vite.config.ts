@@ -83,7 +83,7 @@ function apiPlugin() {
               baseURL,
             })
             const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'xai/grok-2-latest' : 'gpt-4o-mini'),
+              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-2-latest' : 'gpt-4o-mini'),
               stream: true,
               messages: [
                 { role: 'system', content: system },
