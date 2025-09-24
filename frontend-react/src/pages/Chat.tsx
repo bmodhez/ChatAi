@@ -9,6 +9,7 @@ import { uploadChatFile } from '../services/storage'
 import { watchAuth } from '../services/auth'
 import Avatar from '../components/Avatar'
 import { getFirebase } from '../lib/firebase'
+import CopyButton from '../components/CopyButton'
 
 function Sidebar({
   isMenuOpen,
