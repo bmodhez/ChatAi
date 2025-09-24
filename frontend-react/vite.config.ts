@@ -81,9 +81,13 @@ function apiPlugin() {
             const openai = new OpenAI({
               apiKey: (grokKey as string) || (process.env.OPENAI_API_KEY as string),
               baseURL,
-            })
+              defaultHeaders: baseURL.includes('openrouter.ai') ? {
+                'HTTP-Referer': process.env.DEPLOY_URL || 'http://localhost:5173',
+                'X-Title': 'AI Chat Bot',
+              } : undefined,
+            } as any)
             const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-2-latest' : 'gpt-4o-mini'),
+              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
               stream: true,
               messages: [
                 { role: 'system', content: system },
