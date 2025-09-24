@@ -251,8 +251,16 @@ function Chat() {
           }
         }
       } else {
-        const text = await res.text()
-        assistantContent = text || ''
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('application/json')) {
+          let data: any = null
+          try { data = await res.json() } catch { data = null }
+          const text = data?.text || data?.choices?.[0]?.message?.content || ''
+          assistantContent = text
+        } else {
+          const text = await res.text()
+          assistantContent = text || ''
+        }
         const idNow = conv!.id
         setConversations((prev) =>
           prev.map((c) => {
