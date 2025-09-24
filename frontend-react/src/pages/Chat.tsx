@@ -12,8 +12,6 @@ import { getFirebase } from '../lib/firebase'
 import CopyButton from '../components/CopyButton'
 
 function Sidebar({
-  isMenuOpen,
-  setIsMenuOpen,
   conversations,
   currentId,
   onSelect,
