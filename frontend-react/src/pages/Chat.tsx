@@ -144,10 +144,6 @@ function Chat() {
     }
   }, [userId, conversations])
 
-  const upsertConversation = (updater: (c: Conversation) => Conversation) => {
-    setConversations((prev) => prev.map((c) => (c.id === currentId ? updater(c) : c)))
-  }
-
   const createNew = async (initialMessage?: ChatMessage) => {
     const now = Date.now()
     const title = initialMessage ? makeTitle(initialMessage.content) : 'New chat'
