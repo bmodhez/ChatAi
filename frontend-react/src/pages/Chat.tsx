@@ -416,13 +416,13 @@ function Chat() {
                     <div className={isUser ? 'flex items-end gap-2 max-w-[90%] justify-end' : 'flex items-end gap-2 max-w-[90%]'}>
                       {isUser ? (
                         <>
+                          <Avatar role='user' name={user?.name || null} src={userPhoto} />
                           <div className='bg-chatgpt-user text-white px-4 py-2 rounded-2xl shadow'>
                             {m.attachments && m.attachments.length > 0 && m.attachments[0].type === 'image' && (
                               <img src={m.attachments[0].url} alt='attachment' className='max-h-48 rounded-lg mb-2' />
                             )}
                             {m.content}
                           </div>
-                          <Avatar role='user' name={user?.name || null} src={userPhoto} />
                         </>
                       ) : (
                         <>
