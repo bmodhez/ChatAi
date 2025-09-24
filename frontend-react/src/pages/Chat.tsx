@@ -31,7 +31,7 @@ function Sidebar({
     <div className={`min-w-60 px-2 py-2 h-screen bg-chatgpt-dark z-50`}>
       <div className={`flex justify-between font-inter text-chatgpt-primary-dark`}>
         <div className='cursor-pointer hover:bg-slate-500 p-1 rounded-lg' onClick={() => setIsMenuOpen(false)}>
-          <img src='nav_bar.svg' className='invert' />
+          <img src='/nav_bar.svg' className='invert' />
         </div>
         <div></div>
       </div>
@@ -397,7 +397,7 @@ function Chat() {
             className={`text-chatgpt-primary-dark cursor-pointer hover:bg-slate-500 p-1 rounded-lg ${isMenuOpen ? 'invisible' : ''}`}
             onClick={() => setMenuOpen(true)}
           >
-            <img src='nav_bar.svg' className='invert' />
+            <img src='/nav_bar.svg' className='invert' />
           </div>
           <div className='font-bold text-xl'>Algnite AI</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
