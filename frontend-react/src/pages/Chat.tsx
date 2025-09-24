@@ -276,9 +276,12 @@ function Chat() {
         setScrollVersion((v) => v + 1)
       }
     } catch (err) {
-      if (!abortedRef.current) {
+      const raw = err instanceof Error ? err.message : String(err)
+      const isAbort = (err as any)?.name === 'AbortError' || /AbortError/i.test(raw)
+      if (isAbort) {
+        // swallow aborts silently
+      } else if (!abortedRef.current) {
         const idNow = currentId
-        const raw = err instanceof Error ? err.message : String(err)
         const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set GROK_API_KEY (and optionally GROK_BASE_URL) in the server environment.' : raw
         if (idNow) {
           setConversations((prev) =>
@@ -305,10 +308,19 @@ function Chat() {
   }
 
   const handleStop = () => {
-    if (controllerRef.current) {
-      abortedRef.current = true
-      controllerRef.current.abort()
-      setLoading(false)
+    try {
+      if (controllerRef.current) {
+        abortedRef.current = true
+        // Provide a reason for better diagnostics (supported in modern browsers)
+        try {
+          ;(controllerRef.current.abort as any)?.('stopped-by-user')
+        } catch {
+          controllerRef.current.abort()
+        }
+        setLoading(false)
+      }
+    } catch {
+      // ignore
     }
   }
 
