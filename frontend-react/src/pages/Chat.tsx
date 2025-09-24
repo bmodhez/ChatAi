@@ -6,6 +6,7 @@ import type { ChatMessage, Conversation, UserProfile } from '../types/chat'
 import { loadConversations, loadUser, saveConversations, saveUser } from '../lib/storage'
 import { isFirestoreEnabled, ensureAuth, upsertUser, watchConversations, createConversationRemote, updateConversationRemote, deleteConversationRemote } from '../services/db'
 import { uploadChatFile } from '../services/storage'
+import { watchAuth } from '../services/auth'
 
 function Sidebar({
   isMenuOpen,
@@ -81,6 +82,12 @@ function Chat() {
     setUser(u)
     if (isFirestoreEnabled()) {
       ensureAuth(u?.name).catch(() => null)
+      const unsub = watchAuth((fu) => {
+        if (fu) {
+          setUser({ id: fu.uid, name: fu.displayName || fu.email || 'User', email: fu.email || undefined })
+        }
+      })
+      return () => unsub()
     }
   }, [])
 
