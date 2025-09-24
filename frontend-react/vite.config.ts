@@ -28,7 +28,8 @@ function apiPlugin() {
               : 'You are a production-grade AI assistant for chat. Help users ask questions, create content, learn new skills, and get real-time, accurate, and safe solutions. Be concise, friendly, and actionable.'
 
           const useGemini = !!process.env.GEMINI_API_KEY
-          const useOpenAI = !!process.env.OPENAI_API_KEY
+          const grokKey = process.env.GROK_API_KEY
+          const useOpenAI = !!(grokKey || process.env.OPENAI_API_KEY)
 
           res.setHeader('Content-Type', 'text/plain; charset=utf-8')
           res.setHeader('Transfer-Encoding', 'chunked')
@@ -76,12 +77,13 @@ function apiPlugin() {
           }
 
           if (useOpenAI) {
+            const baseURL = (process.env as any).OPENAI_BASE_URL || (process.env as any).GROK_BASE_URL || 'https://openrouter.ai/api/v1'
             const openai = new OpenAI({
-              apiKey: process.env.OPENAI_API_KEY as string,
-              baseURL: (process.env as any).OPENAI_BASE_URL || undefined,
+              apiKey: (grokKey as string) || (process.env.OPENAI_API_KEY as string),
+              baseURL,
             })
             const stream = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || ((process.env.OPENAI_BASE_URL || '').includes('openrouter.ai') ? 'openai/gpt-4o-mini' : 'gpt-4o-mini'),
+              model: process.env.OPENAI_MODEL || process.env.GROK_MODEL || (baseURL.includes('openrouter.ai') ? 'xai/grok-2-latest' : 'gpt-4o-mini'),
               stream: true,
               messages: [
                 { role: 'system', content: system },
@@ -99,7 +101,7 @@ function apiPlugin() {
           }
 
           res.statusCode = 500
-          res.end('Missing API key (set GEMINI_API_KEY or OPENAI_API_KEY)')
+          res.end('Missing API key (set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY)')
         } catch (err) {
           res.statusCode = 500
           const msg = (err && typeof (err as any).message === 'string') ? (err as any).message : 'Server error'

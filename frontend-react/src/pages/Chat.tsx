@@ -271,7 +271,7 @@ function Chat() {
       if (!abortedRef.current) {
         const idNow = currentId
         const raw = err instanceof Error ? err.message : String(err)
-        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
+        const reason = /Missing API key/i.test(raw) ? 'Missing AI API key. Set GROK_API_KEY or OPENAI_API_KEY or GEMINI_API_KEY in the server environment.' : raw
         if (idNow) {
           setConversations((prev) =>
             prev.map((c) => (c.id === idNow ? { ...c, messages: [...c.messages, { role: 'assistant', content: `Error: ${reason}` }], updatedAt: Date.now() } : c))
