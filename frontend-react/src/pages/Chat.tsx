@@ -19,7 +19,7 @@ function Sidebar({
   onDelete,
 }: {
   isMenuOpen: boolean
-  setIsMenuOpen: { setMenuOpen }
+  setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
   conversations: Conversation[]
   currentId: string | null
   onSelect: (id: string) => void
