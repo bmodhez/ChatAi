@@ -31,6 +31,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</> // FIX: Wrap with Fragment
 }
 
+// Demo utility function for testing and examples
+export function demoFunction(a: number, b: number): number {
+  return a + b
+}
+
 // FIX: Add return type
 export default function App(): JSX.Element {
   return (
