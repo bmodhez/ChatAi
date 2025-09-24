@@ -48,11 +48,18 @@ export function watchConversations(cb: (list: Conversation[]) => void) {
   const uid = auth.currentUser?.uid
   if (!uid) return () => {}
   const q = query(collection(db, 'users', uid, 'conversations'), orderBy('updatedAt', 'desc'))
-  return onSnapshot(q, (snap) => {
-    const items: Conversation[] = []
-    snap.forEach((d) => items.push(toConv(d.id, d.data())))
-    cb(items)
-  })
+  return onSnapshot(
+    q,
+    (snap) => {
+      const items: Conversation[] = []
+      snap.forEach((d) => items.push(toConv(d.id, d.data())))
+      cb(items)
+    },
+    (error) => {
+      console.error(error)
+      cb([])
+    }
+  )
 }
 
 export async function createConversationRemote(initial?: { title?: string; messages?: ChatMessage[] }) {
