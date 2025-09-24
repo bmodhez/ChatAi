@@ -13,6 +13,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [authed, setAuthed] = useState(false)
 
+  jnewfw
+ijefme
   useEffect(() => {
     if (!fb) {
       setAuthed(true)
