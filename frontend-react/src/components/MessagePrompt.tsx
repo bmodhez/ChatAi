@@ -10,9 +10,11 @@ type Props = {
   onStop?: () => void
   showStop?: boolean
   inputRef?: React.Ref<HTMLTextAreaElement>
+  placeholder?: string
+  emphasizePlaceholder?: boolean
 }
 
-function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onStop, showStop, inputRef }: Props) {
+function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onStop, showStop, inputRef, placeholder, emphasizePlaceholder }: Props) {
   return (
     <>
       <div className='px-2 py-3 rounded-2xl mx-2 sm:mx-20 my-3 bg-chatgpt-dark md:mx-36 lg:mx-72'>
@@ -22,6 +24,8 @@ function MessagePrompt({ value, onChange, onSend, onFileSelected, disabled, onSt
               ref={inputRef as any}
               value={value}
               onChange={onChange}
+              placeholder={placeholder}
+              emphasizePlaceholder={emphasizePlaceholder}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && !disabled) {
                   e.preventDefault()
