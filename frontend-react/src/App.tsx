@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { getFirebase } from './lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 
-// Fix: Explicitly type the children prop
+// FIX: Change JSX.Element to React.ReactNode
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const fb = getFirebase()
   const [loading, setLoading] = useState(true)
@@ -28,10 +28,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) return <div className='min-h-screen bg-chatgpt-sidebar-dark text-chatgpt-primary-dark flex items-center justify-center'>Loading…</div>
   if (!authed) return <Navigate to='/' replace />
-  return <>{children}</>
+  return <>{children}</> // FIX: Wrap with Fragment
 }
 
-// Fix: Add return type
+// FIX: Add return type
 export default function App(): JSX.Element {
   return (
     <BrowserRouter>
