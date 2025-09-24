@@ -1,17 +1,49 @@
-import { useState } from 'react'
-
 import './App.css'
-import MessagePrompt from './components/MessagePrompt'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Chat from './pages/Chat'
+import HomeAuth from './pages/Home'
+import { useEffect, useState } from 'react'
+import { getFirebase } from './lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 
-function App() {
-  
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const fb = getFirebase()
+  const [loading, setLoading] = useState(true)
+  const [authed, setAuthed] = useState(false)
 
-  return (
-    <>
-    <Chat/>
-    </>
-  )
+  useEffect(() => {
+    if (!fb) {
+      setAuthed(false)
+      setLoading(false)
+      return
+    }
+    const unsub = onAuthStateChanged(fb.auth, (u) => {
+      setAuthed(!!u)
+      setLoading(false)
+    })
+    return () => unsub()
+  }, [])
+
+  if (loading) return <div className='min-h-screen bg-chatgpt-sidebar-dark text-chatgpt-primary-dark flex items-center justify-center'>Loading…</div>
+  if (!authed) return <Navigate to='/' replace />
+  return children
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<HomeAuth />} />
+        <Route
+          path='/chat'
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+        <Route path='*' element={<Navigate to='/' replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
+}
