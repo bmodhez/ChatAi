@@ -84,14 +84,31 @@ function apiPlugin() {
                 'X-Title': 'AI Chat Bot',
               } : undefined,
             } as any)
+            const imageBase64 = typeof body?.imageBase64 === 'string' ? body.imageBase64 : undefined
+            const imageMimeType = typeof body?.imageMimeType === 'string' ? body.imageMimeType : undefined
+
+            const baseMsgs: any[] = messages.map((m: any) => ({ role: m.role, content: m.content }))
+            let finalMsgs: any[] = [{ role: 'system', content: system }, ...baseMsgs]
+            if (imageBase64 && imageMimeType) {
+              const dataUrl = `data:${imageMimeType};base64,${imageBase64}`
+              for (let i = finalMsgs.length - 1; i >= 0; i--) {
+                if (finalMsgs[i].role === 'user') {
+                  const c = finalMsgs[i].content
+                  const textPart = Array.isArray(c) ? c : [{ type: 'text', text: String(c ?? '') }]
+                  finalMsgs[i] = {
+                    role: 'user',
+                    content: [...textPart, { type: 'image_url', image_url: { url: dataUrl } }],
+                  }
+                  break
+                }
+              }
+            }
+
             const resp = await openai.chat.completions.create({
               model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
               stream: false,
               max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 512,
-              messages: [
-                { role: 'system', content: system },
-                ...messages.map((m: any) => ({ role: m.role, content: m.content })),
-              ],
+              messages: finalMsgs,
               temperature: typeof body?.temperature === 'number' ? body.temperature : 0.7,
             })
 
