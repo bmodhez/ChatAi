@@ -84,7 +84,7 @@ function Chat() {
         <div className={`absolute transition-transform duration-500 left-0 max-w-60 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'} h-screen`}>
           <Sidebar
             isMenuOpen={isMenuOpen}
-            setIsMenuOpen={setIsMenuOpen}  {/* ✅ Now it matches */}
+            setIsMenuOpen={setIsMenuOpen}
             conversations={conversations}
             currentId={currentId}
             onSelect={handleSelect}
