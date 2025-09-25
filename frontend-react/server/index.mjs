@@ -41,8 +41,10 @@ app.post('/api/chat', async (req, res) => {
       return
     }
 
+    const modelNameRaw = process.env.GROK_MODEL || 'x-ai/grok-4'
+    const model = typeof modelNameRaw === 'string' ? modelNameRaw.trim() : 'x-ai/grok-4'
     const payload = {
-      model: process.env.GROK_MODEL || 'x-ai/grok-4',
+      model,
       messages: toOpenAIContent(messages, imageBase64, imageMimeType),
       stream: false,
       temperature: 0.7,
