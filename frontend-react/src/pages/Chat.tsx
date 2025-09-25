@@ -17,6 +17,8 @@ function Sidebar({
   onSelect,
   onNew,
   onDelete,
+  setIsMenuOpen,
+  isMenuOpen,
 }: {
   isMenuOpen: boolean
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
