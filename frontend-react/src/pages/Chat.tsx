@@ -165,7 +165,7 @@ function Chat() {
           setCurrentId(conv.id)
           return conv
         }
-      } catch {}
+      } catch { }
     }
     const id = `c_${Math.random().toString(36).slice(2)}`
     const conv: Conversation = { id, title, messages: initialMessage ? [initialMessage] : [], createdAt: now, updatedAt: now }
@@ -185,7 +185,7 @@ function Chat() {
       try {
         await ensureAuth(user?.name)
         attachmentUrl = await uploadChatFile(selectedFile)
-      } catch {}
+      } catch { }
     }
     // Fallback to local preview data URL when Firestore is disabled or upload fails
     if (!attachmentUrl && selectedImage) {
@@ -253,7 +253,7 @@ function Chat() {
 
       let errorText = ''
       if (!res.ok) {
-        try { errorText = await res.text() } catch {}
+        try { errorText = await res.text() } catch { }
         throw new Error(errorText || 'Failed to connect to AI service')
       }
 
@@ -345,7 +345,7 @@ function Chat() {
           try {
             await ensureAuth(user?.name)
             await updateConversationRemote(final.id, { title: final.title, messages: final.messages, updatedAt: Date.now() } as any)
-          } catch {}
+          } catch { }
         }
       }
       setSelectedImage(null)
@@ -360,7 +360,7 @@ function Chat() {
         abortedRef.current = true
         // Provide a reason for better diagnostics (supported in modern browsers)
         try {
-          ;(controllerRef.current.abort as any)?.('stopped-by-user')
+          ; (controllerRef.current.abort as any)?.('stopped-by-user')
         } catch {
           controllerRef.current.abort()
         }
@@ -382,7 +382,7 @@ function Chat() {
       try {
         await ensureAuth(user?.name)
         await deleteConversationRemote(id)
-      } catch {}
+      } catch { }
     }
   }
 
@@ -400,7 +400,7 @@ function Chat() {
     setMenuOpen(false)
   }
   const handleLogout = () => {
-    try { import('../services/auth').then(m => m.signOut()) } catch {}
+    try { import('../services/auth').then(m => m.signOut()) } catch { }
     saveUser(null)
     setUser(null)
     setMenuOpen(false)
@@ -427,15 +427,17 @@ function Chat() {
           >
             <img src='/nav_bar.svg' className='invert' />
           </div>
-          <div className='font-bold text-xl'>Algnite AI</div>
+          <div className='font-bold text-xl ml-12 text-center'>Algnite AI</div>
           <ProfileMenu user={user} onLogin={handleLogin} onLogout={handleLogout} />
         </div>
         <div className='flex-1 bg-chatgpt-sidebar-dark overflow-y-auto' ref={scrollContainerRef}>
           <div className='max-w-3xl mx-auto px-4 py-6 space-y-6 md:space-y-7'>
             {!current || current.messages.length === 0 ? (
-              <div className='text-center'>
-                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold mb-4'>What can I help with?</div>
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4'>
+              <div className='flex flex-col items-center justify-center min-h-[60vh] text-center'>
+                <div className='text-chatgpt-primary-dark text-2xl sm:text-3xl font-semibold mb-6'>
+                  What can I help with?
+                </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-xl'>
                   {suggestions.map((s, i) => (
                     <button
                       key={i}
@@ -492,7 +494,7 @@ function Chat() {
                 )
               })
             )}
-          <div ref={endRef} />
+            <div ref={endRef} />
           </div>
         </div>
         {showScrollDown && (
