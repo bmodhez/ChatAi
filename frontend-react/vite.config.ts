@@ -36,7 +36,8 @@ function apiPlugin() {
 
           if (useGemini) {
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string)
-            const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+            const modelNameRaw = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+            const modelName = typeof modelNameRaw === 'string' ? modelNameRaw.trim() : 'gemini-1.5-flash'
             const model = genAI.getGenerativeModel({ model: modelName })
 
             const imageBase64 = typeof body?.imageBase64 === 'string' ? body.imageBase64 : undefined
@@ -104,8 +105,10 @@ function apiPlugin() {
               }
             }
 
+            const modelEnvRaw = (process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini')) as string
+            const modelName = typeof modelEnvRaw === 'string' ? modelEnvRaw.trim() : (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini')
             const resp = await openai.chat.completions.create({
-              model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
+              model: modelName,
               stream: false,
               max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 256,
               messages: finalMsgs,
