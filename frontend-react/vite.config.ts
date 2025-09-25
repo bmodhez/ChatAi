@@ -28,7 +28,8 @@ function apiPlugin() {
               : 'You are a production-grade AI assistant for chat. Help users ask questions, create content, learn new skills, and get real-time, accurate, and safe solutions. Be concise, friendly, and actionable.'
 
           const useGemini = !!process.env.GEMINI_API_KEY
-          const grokKey = process.env.GROK_API_KEY
+          const keyRaw = process.env.GROK_API_KEY as string | undefined
+          const grokKey = typeof keyRaw === 'string' ? keyRaw.trim() : ''
           const useGrok = !!grokKey
 
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -78,7 +79,7 @@ function apiPlugin() {
           if (useGrok) {
             const baseURL = (process.env as any).GROK_BASE_URL || (process.env as any).OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
             const openai = new OpenAI({
-              apiKey: grokKey as string,
+              apiKey: grokKey,
               baseURL,
               defaultHeaders: baseURL.includes('openrouter.ai') ? {
                 'HTTP-Referer': process.env.DEPLOY_URL || 'http://localhost:5173',

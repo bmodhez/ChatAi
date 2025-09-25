@@ -35,7 +35,8 @@ app.post('/api/chat', async (req, res) => {
       return
     }
     const { messages, imageBase64, imageMimeType } = req.body || {}
-    const apiKey = process.env.GROK_API_KEY
+    const apiKeyRaw = process.env.GROK_API_KEY
+    const apiKey = typeof apiKeyRaw === 'string' ? apiKeyRaw.trim() : ''
     if (!apiKey) {
       res.status(500).json({ error: 'Missing API key. Set GROK_API_KEY.' })
       return
