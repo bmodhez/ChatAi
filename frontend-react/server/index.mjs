@@ -35,14 +35,17 @@ app.post('/api/chat', async (req, res) => {
       return
     }
     const { messages, imageBase64, imageMimeType } = req.body || {}
-    const apiKey = process.env.GROK_API_KEY
+    const apiKeyRaw = process.env.GROK_API_KEY
+    const apiKey = typeof apiKeyRaw === 'string' ? apiKeyRaw.trim() : ''
     if (!apiKey) {
       res.status(500).json({ error: 'Missing API key. Set GROK_API_KEY.' })
       return
     }
 
+    const modelNameRaw = process.env.GROK_MODEL || 'x-ai/grok-4'
+    const model = typeof modelNameRaw === 'string' ? modelNameRaw.trim() : 'x-ai/grok-4'
     const payload = {
-      model: process.env.GROK_MODEL || 'x-ai/grok-4',
+      model,
       messages: toOpenAIContent(messages, imageBase64, imageMimeType),
       stream: false,
       temperature: 0.7,
@@ -82,7 +85,7 @@ app.post('/api/chat', async (req, res) => {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distPath = path.resolve(__dirname, '..', 'dist')
 app.use(express.static(distPath))
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))
 })
 

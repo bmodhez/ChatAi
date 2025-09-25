@@ -17,6 +17,8 @@ function Sidebar({
   onSelect,
   onNew,
   onDelete,
+  setIsMenuOpen,
+  isMenuOpen,
 }: {
   isMenuOpen: boolean
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -118,10 +120,17 @@ function Chat() {
       let unsub: null | (() => void) = null
       ensureAuth(user?.name)
         .then(() => {
-          unsub = watchConversations((list) => {
-            setConversations(list)
-            if (list.length && !currentId) setCurrentId((prev) => prev || list[0].id)
-          })
+          unsub = watchConversations(
+            (list) => {
+              setConversations(list)
+              if (list.length && !currentId) setCurrentId((prev) => prev || list[0].id)
+            },
+            () => {
+              const data = loadConversations(userId)
+              setConversations(data)
+              if (data.length && !currentId) setCurrentId(data[0].id)
+            }
+          )
         })
         .catch(() => {
           const data = loadConversations(userId)

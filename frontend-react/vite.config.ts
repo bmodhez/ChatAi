@@ -28,7 +28,8 @@ function apiPlugin() {
               : 'You are a production-grade AI assistant for chat. Help users ask questions, create content, learn new skills, and get real-time, accurate, and safe solutions. Be concise, friendly, and actionable.'
 
           const useGemini = !!process.env.GEMINI_API_KEY
-          const grokKey = process.env.GROK_API_KEY
+          const keyRaw = process.env.GROK_API_KEY as string | undefined
+          const grokKey = typeof keyRaw === 'string' ? keyRaw.trim() : ''
           const useGrok = !!grokKey
 
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -36,7 +37,8 @@ function apiPlugin() {
 
           if (useGemini) {
             const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string)
-            const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+            const modelNameRaw = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+            const modelName = typeof modelNameRaw === 'string' ? modelNameRaw.trim() : 'gemini-1.5-flash'
             const model = genAI.getGenerativeModel({ model: modelName })
 
             const imageBase64 = typeof body?.imageBase64 === 'string' ? body.imageBase64 : undefined
@@ -77,7 +79,7 @@ function apiPlugin() {
           if (useGrok) {
             const baseURL = (process.env as any).GROK_BASE_URL || (process.env as any).OPENAI_BASE_URL || 'https://openrouter.ai/api/v1'
             const openai = new OpenAI({
-              apiKey: grokKey as string,
+              apiKey: grokKey,
               baseURL,
               defaultHeaders: baseURL.includes('openrouter.ai') ? {
                 'HTTP-Referer': process.env.DEPLOY_URL || 'http://localhost:5173',
@@ -104,8 +106,10 @@ function apiPlugin() {
               }
             }
 
+            const modelEnvRaw = (process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini')) as string
+            const modelName = typeof modelEnvRaw === 'string' ? modelEnvRaw.trim() : (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini')
             const resp = await openai.chat.completions.create({
-              model: process.env.GROK_MODEL || process.env.OPENAI_MODEL || (baseURL.includes('openrouter.ai') ? 'x-ai/grok-4' : 'gpt-4o-mini'),
+              model: modelName,
               stream: false,
               max_tokens: typeof body?.max_tokens === 'number' ? body.max_tokens : 256,
               messages: finalMsgs,

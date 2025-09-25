@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react'
 import { getFirebase } from './lib/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 
-// FIX: Change JSX.Element to React.ReactNode
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const fb = getFirebase()
   const [loading, setLoading] = useState(true)
@@ -31,8 +30,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</> // FIX: Wrap with Fragment
 }
 
-// FIX: Add return type
-export default function App(): JSX.Element {
+export default function App(): React.ReactElement {
   return (
     <BrowserRouter>
       <Routes>
