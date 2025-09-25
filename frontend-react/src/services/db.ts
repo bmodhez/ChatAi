@@ -41,7 +41,7 @@ function toConv(id: string, data: any): Conversation {
   }
 }
 
-export function watchConversations(cb: (list: Conversation[]) => void) {
+export function watchConversations(cb: (list: Conversation[]) => void, onError?: (err: any) => void) {
   const fb = getFirebase()
   if (!fb) return () => {}
   const { db, auth } = fb
@@ -57,6 +57,7 @@ export function watchConversations(cb: (list: Conversation[]) => void) {
     },
     (error) => {
       console.error(error)
+      try { onError?.(error) } catch {}
       cb([])
     }
   )
