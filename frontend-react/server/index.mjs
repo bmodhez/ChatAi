@@ -85,7 +85,7 @@ app.post('/api/chat', async (req, res) => {
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distPath = path.resolve(__dirname, '..', 'dist')
 app.use(express.static(distPath))
-app.get('(.*)', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'))
 })
 
